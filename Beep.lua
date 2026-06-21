@@ -44,7 +44,7 @@ local Config = {
     },
     Physics = {
         WalkSpeed = 16,
-        JumpPower = 50,
+        JumpPower = 100,
         NoClip = false,
         Fly = false,
         FlySpeed = 50,
@@ -136,17 +136,7 @@ Instance.new("UICorner", CloseMenuBtn).CornerRadius = UDim.new(0, 6)
 
 CloseMenuBtn.MouseButton1Click:Connect(function()
     UI.Active = false
-    local char = LocalPlayer.Character
-    local hum = char and char:FindFirstChildOfClass("Humanoid")
-    if hum then
-        hum.WalkSpeed = 16
-        -- Reset both jump systems
-        if hum.UseJumpPower then
-            hum.JumpPower = 50
-        else
-            hum.JumpHeight = 7.2
-        end
-    end
+    DisableFly()
     UI.Screen:Destroy()
 end)
 
@@ -617,7 +607,7 @@ UI:CreateToggle(VisualsPage, "3D Boxes / Chams", "Visuals", "Skeletons")
 UI:CreateToggle(PhysicsPage, "Enable Speed Boost", "Physics", "SpeedEnabled")
 UI:CreateSlider(PhysicsPage, "Walk Speed", 16, 150, "Physics", "WalkSpeed")
 UI:CreateToggle(PhysicsPage, "Enable Jump Boost", "Physics", "JumpEnabled")
-UI:CreateSlider(PhysicsPage, "Jump Power", 50, 200, "Physics", "JumpPower")
+UI:CreateSlider(PhysicsPage, "Jump Power", 50, 300, "Physics", "JumpPower")
 UI:CreateToggle(PhysicsPage, "NoClip", "Physics", "NoClip")
 UI:CreateToggle(PhysicsPage, "Fly Mode", "Physics", "Fly", function(state)
     if state then
