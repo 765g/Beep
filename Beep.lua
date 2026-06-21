@@ -140,7 +140,12 @@ CloseMenuBtn.MouseButton1Click:Connect(function()
     local hum = char and char:FindFirstChildOfClass("Humanoid")
     if hum then
         hum.WalkSpeed = 16
-        hum.JumpPower = 50
+        -- Reset both jump systems
+        if hum.UseJumpPower then
+            hum.JumpPower = 50
+        else
+            hum.JumpHeight = 7.2
+        end
     end
     UI.Screen:Destroy()
 end)
@@ -574,7 +579,13 @@ RunService.Stepped:Connect(function()
         end
         
         if Config.Physics.JumpEnabled then
-            hum.JumpPower = Config.Physics.JumpPower
+            -- Handle both JumpPower and JumpHeight (new Humanoid system)
+            if hum.UseJumpPower then
+                hum.JumpPower = Config.Physics.JumpPower
+            else
+                -- Convert JumpPower to approximate JumpHeight
+                hum.JumpHeight = Config.Physics.JumpPower / 10
+            end
         end
         
         if Config.Physics.NoClip then
