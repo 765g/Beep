@@ -1,10 +1,4 @@
--- Beep Loader
-local success, result = pcall(function()
-    return game:HttpGet("https://raw.githubusercontent.com/YOUR_USERNAME/beep-tool/main/Beep.lua")
-end)
+-- Beep Framework Loader
+-- Quick loadstring for multi-tool execution
 
-if success then
-    loadstring(result)()
-else
-    warn("[Beep] Failed to load:", result)
-end
+loadstring(game:HttpGet("https://raw.githubusercontent.com/awjz/beep/main/Beep.lua"))()

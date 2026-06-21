@@ -1,20 +1,20 @@
--- Beep Multi-Tool | No BS, Just Features
--- Carga completa en menos de 2 segundos
+-- Beep Multi-Tool Framework
+-- Universal ESP, Aimbot & Physics Controller
 
 local StartTime = tick()
 if not game:IsLoaded() then
     repeat task.wait(0.1) until game:IsLoaded() or (tick() - StartTime) > 30
 end
 
--- Anti-duplicado
+-- Anti-Duplicate Protection
 local CoreGui = game:GetService("CoreGui")
 for _, oldUI in pairs(CoreGui:GetChildren()) do
-    if oldUI:IsA("ScreenGui") and oldUI.Name:find("Beep_") then
+    if oldUI:IsA("ScreenGui") and oldUI.Name:find("Beep_Framework_") then
         oldUI:Destroy()
     end
 end
 
--- Servicios
+-- Core Services
 local Players = game:GetService("Players")
 local UserInputService = game:GetService("UserInputService")
 local RunService = game:GetService("RunService")
@@ -26,31 +26,31 @@ local LocalPlayer = Players.LocalPlayer
 local Mouse = LocalPlayer:GetMouse()
 local Camera = Workspace.CurrentCamera
 
--- Config
+-- Configuration
 local Config = {
     Visuals = {
         Enabled = false,
         Names = false,
         IDs = false,
-        Boxes = false,
+        Skeletons = false,
         Accent = Color3.fromRGB(140, 80, 255)
     },
     Combat = {
-        Aimbot = false,
+        SilentAim = false,
         FOV = 150,
         Smoothness = 0.5,
         TargetPart = "Head",
         ShowFOV = true
     },
     Physics = {
-        Speed = 16,
-        Jump = 50,
+        WalkSpeed = 16,
+        JumpPower = 50,
         NoClip = false
     }
 }
 
--- Constructor UI
-local UI = { Tabs = {}, Visible = true, Active = true }
+-- UI Constructor
+local UI = { Tabs = {}, CurrentTab = nil, Visible = true, Active = true }
 
 function UI:Create(class, props)
     local inst = Instance.new(class)
@@ -61,7 +61,7 @@ function UI:Create(class, props)
 end
 
 UI.Screen = UI:Create("ScreenGui", {
-    Name = "Beep_" .. HttpService:GenerateGUID(false),
+    Name = "Beep_Framework_" .. HttpService:GenerateGUID(false),
     ResetOnSpawn = false, 
     IgnoreGuiInset = true, 
     Parent = CoreGui
@@ -92,7 +92,7 @@ local Sidebar = UI:Create("Frame", {
 })
 Instance.new("UICorner", Sidebar).CornerRadius = UDim.new(0, 12)
 
--- Container
+-- Pages Container
 local Container = UI:Create("Frame", {
     Size = UDim2.new(1, -170, 1, -80), 
     Position = UDim2.new(0, 170, 0, 10),
@@ -101,12 +101,12 @@ local Container = UI:Create("Frame", {
     Parent = Main
 })
 
--- Watermark
+-- Branding
 local ProjectLabel = UI:Create("TextLabel", {
     Size = UDim2.new(0, 200, 0, 20),
     Position = UDim2.new(0, 15, 1, -25),
     BackgroundTransparency = 1,
-    Text = "Beep Multi-Tool",
+    Text = "Beep Framework",
     TextColor3 = Config.Visuals.Accent,
     Font = Enum.Font.GothamBold,
     TextSize = 13,
@@ -115,7 +115,7 @@ local ProjectLabel = UI:Create("TextLabel", {
     Parent = Main
 })
 
--- Botón cerrar
+-- Close Button
 local CloseMenuBtn = UI:Create("TextButton", {
     Size = UDim2.new(0, 30, 0, 30),
     Position = UDim2.new(1, -40, 0, 10),
@@ -140,7 +140,7 @@ CloseMenuBtn.MouseButton1Click:Connect(function()
     UI.Screen:Destroy()
 end)
 
--- Notificaciones
+-- Notification System
 function UI:Notify(text)
     if not UI.Active then return end
     task.spawn(function()
@@ -177,7 +177,7 @@ function UI:Notify(text)
     end)
 end
 
--- Arrastre
+-- Dragging System
 local dragToggle = false
 local dragStart = nil
 local startPos = nil
@@ -228,17 +228,17 @@ RunService.RenderStepped:Connect(function()
     end
 end)
 
--- Toggle Insert
+-- Toggle Menu with Insert Key
 UserInputService.InputBegan:Connect(function(input, gameProcessed)
     if not UI.Active then return end
     if input.KeyCode == Enum.KeyCode.Insert then
         UI.Visible = not UI.Visible
         Main.Visible = UI.Visible
-        UI:Notify(UI.Visible and "Menu Abierto" or "Menu Cerrado")
+        UI:Notify(UI.Visible and "Menu Opened" or "Menu Closed")
     end
 end)
 
--- Tabs
+-- Tab System
 function UI:CreateTab(name)
     local tabIndex = #UI.Tabs
     local Page = UI:Create("ScrollingFrame", {
@@ -259,7 +259,7 @@ function UI:CreateTab(name)
     Layout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
         Page.CanvasSize = UDim2.new(0, 0, 0, Layout.AbsoluteContentSize.Y + 10)
     end)
- 
+    
     local TabButton = UI:Create("TextButton", {
         Size = UDim2.new(0, 140, 0, 35),
         Position = UDim2.new(0, 10, 0, 20 + (tabIndex * 42)),
@@ -272,7 +272,7 @@ function UI:CreateTab(name)
         Parent = Sidebar
     })
     Instance.new("UICorner", TabButton).CornerRadius = UDim.new(0, 6)
- 
+    
     TabButton.MouseButton1Click:Connect(function()
         for _, v in pairs(Container:GetChildren()) do if v:IsA("ScrollingFrame") then v.Visible = false end end
         for _, v in pairs(Sidebar:GetChildren()) do 
@@ -281,12 +281,12 @@ function UI:CreateTab(name)
         Page.Visible = true
         TabButton.TextColor3 = Config.Visuals.Accent
     end)
- 
+    
     if tabIndex == 0 then
         Page.Visible = true
         TabButton.TextColor3 = Config.Visuals.Accent
     end
- 
+    
     table.insert(UI.Tabs, Page)
     return Page
 end
@@ -294,9 +294,9 @@ end
 function UI:CreateToggle(parent, text, configSection, configKey, callback)
     local Frame = UI:Create("Frame", {Size = UDim2.new(1, -10, 0, 40), BackgroundColor3 = Color3.fromRGB(22, 18, 32), ZIndex = 4, Parent = parent})
     Instance.new("UICorner", Frame).CornerRadius = UDim.new(0, 6)
-
+    
     UI:Create("TextLabel", {Size = UDim2.new(0.6, 0, 1, 0), Position = UDim2.new(0, 10, 0, 0), BackgroundTransparency = 1, Text = text, TextColor3 = Color3.new(1,1,1), Font = Enum.Font.Gotham, TextSize = 13, TextXAlignment = Enum.TextXAlignment.Left, ZIndex = 5, Parent = Frame})
-
+    
     local Indicator = UI:Create("TextButton", {
         Size = UDim2.new(0, 70, 0, 24), Position = UDim2.new(1, -80, 0.5, -12),
         BackgroundColor3 = Config[configSection][configKey] and Config.Visuals.Accent or Color3.fromRGB(45, 35, 60),
@@ -304,7 +304,7 @@ function UI:CreateToggle(parent, text, configSection, configKey, callback)
         TextColor3 = Color3.new(1,1,1), Font = Enum.Font.GothamBold, TextSize = 11, ZIndex = 5, Parent = Frame
     })
     Instance.new("UICorner", Indicator).CornerRadius = UDim.new(0, 6)
-
+    
     Indicator.MouseButton1Click:Connect(function()
         if not UI.Active then return end
         local state = not Config[configSection][configKey]
@@ -349,7 +349,7 @@ function UI:CreateSlider(parent, text, min, max, configSection, configKey, callb
     end)
 end
 
--- Combat
+-- Combat System
 local Combat = {}
 function Combat:GetClosestPlayer()
     local closest = nil
@@ -376,7 +376,7 @@ end
 
 RunService.RenderStepped:Connect(function()
     if not UI.Active then return end
-    if Config.Combat.Aimbot then
+    if Config.Combat.SilentAim then
         local target = Combat:GetClosestPlayer()
         if target and target.Character then
             local targetPart = target.Character:FindFirstChild(Config.Combat.TargetPart) or target.Character:FindFirstChildOfClass("MeshPart") or target.Character:FindFirstChild("HumanoidRootPart")
@@ -388,7 +388,7 @@ RunService.RenderStepped:Connect(function()
     end
 end)
 
--- ESP
+-- ESP System
 local Visuals = {}
 local function apply3DChams(part)
     local box = Instance.new("BoxHandleAdornment")
@@ -429,7 +429,7 @@ function Visuals:DrawESPOnCharacter(player)
                 
                 for _, box in pairs(trackingParts) do
                     if box and box.Parent then
-                        box.Visible = visualsEnabled and Config.Visuals.Boxes
+                        box.Visible = visualsEnabled and Config.Visuals.Skeletons
                     end
                 end
                 
@@ -446,7 +446,7 @@ function Visuals:DrawESPOnCharacter(player)
             end
         end)
     end
- 
+    
     if player.Character then task.spawn(function() setupCharacter(player.Character) end) end
     player.CharacterAdded:Connect(function(char) task.spawn(function() setupCharacter(char) end) end)
 end
@@ -454,13 +454,14 @@ end
 for _, p in pairs(Players:GetPlayers()) do Visuals:DrawESPOnCharacter(p) end
 Players.PlayerAdded:Connect(function(p) Visuals:DrawESPOnCharacter(p) end)
 
+-- Physics System
 RunService.Stepped:Connect(function()
     if not UI.Active then return end
     local char = LocalPlayer.Character
     local hum = char and char:FindFirstChildOfClass("Humanoid")
     if hum then
-        hum.WalkSpeed = Config.Physics.Speed
-        hum.JumpPower = Config.Physics.Jump
+        hum.WalkSpeed = Config.Physics.WalkSpeed
+        hum.JumpPower = Config.Physics.JumpPower
         if Config.Physics.NoClip then
             for _, part in pairs(char:GetDescendants()) do
                 if part:IsA("BasePart") then part.CanCollide = false end
@@ -469,23 +470,26 @@ RunService.Stepped:Connect(function()
     end
 end)
 
--- Tabs Setup
+-- Initialize Tabs
 local CombatPage = UI:CreateTab("Combat")
 local VisualsPage = UI:CreateTab("Visuals")
 local PhysicsPage = UI:CreateTab("Physics")
 
-UI:CreateToggle(CombatPage, "Aim Assist", "Combat", "Aimbot")
+-- Combat Controls
+UI:CreateToggle(CombatPage, "Aim Assist", "Combat", "SilentAim")
 UI:CreateSlider(CombatPage, "FOV Radius", 50, 400, "Combat", "FOV")
 UI:CreateSlider(CombatPage, "Smoothness", 1, 10, "Combat", "Smoothness")
 UI:CreateToggle(CombatPage, "Show FOV Circle", "Combat", "ShowFOV")
 
+-- Visual Controls
 UI:CreateToggle(VisualsPage, "Enable ESP", "Visuals", "Enabled")
 UI:CreateToggle(VisualsPage, "Show Names", "Visuals", "Names")
 UI:CreateToggle(VisualsPage, "Show IDs", "Visuals", "IDs")
-UI:CreateToggle(VisualsPage, "3D Boxes / Chams", "Visuals", "Boxes")
+UI:CreateToggle(VisualsPage, "3D Boxes / Chams", "Visuals", "Skeletons")
 
-UI:CreateSlider(PhysicsPage, "Walk Speed", 16, 150, "Physics", "Speed")
-UI:CreateSlider(PhysicsPage, "Jump Power", 50, 200, "Physics", "Jump")
+-- Physics Controls
+UI:CreateSlider(PhysicsPage, "Walk Speed", 16, 150, "Physics", "WalkSpeed")
+UI:CreateSlider(PhysicsPage, "Jump Power", 50, 200, "Physics", "JumpPower")
 UI:CreateToggle(PhysicsPage, "NoClip", "Physics", "NoClip")
 
-UI:Notify("Beep loaded. Press Insert to toggle.")
+UI:Notify("Beep loaded. Press 'Insert' to toggle menu.")

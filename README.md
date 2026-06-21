@@ -1,48 +1,78 @@
-# Beep Multi-Tool
+# Beep Framework
 
-Simple Roblox utility hub. No keys, no auth, no waiting.
+Universal multi-tool for Roblox executors featuring combat automation, visual enhancements, and physics modifications.
 
 ## Features
 
-### Combat
-- Aim assist with FOV targeting
-- Adjustable smoothness (1-10)
-- Visual FOV circle
-- Smart target detection
+### Combat Tools
+- **Aim Assist** - Smooth camera lock onto targets within FOV
+- **Configurable FOV** - Adjustable detection radius (50-400 units)
+- **Smoothness Control** - Fine-tune aim interpolation
+- **Visual FOV Indicator** - Real-time circle showing active detection zone
 
-### Visuals
-- ESP with player names
-- User ID display
-- 3D bounding boxes (chams)
-- Distance indicators
-- Works with any avatar type
+### Visual Enhancements
+- **Player ESP** - See players through walls with 3D highlighting
+- **Name Tags** - Display player names with distance tracking
+- **User ID Display** - Show account IDs for identification
+- **3D Chams** - Full-body boxes on all character parts
 
-### Physics
-- Walk speed modifier (16-150)
-- Jump power control (50-200)
-- NoClip for phase walking
+### Physics Modifications
+- **Speed Control** - Adjust walk speed (16-150)
+- **Jump Enhancement** - Modify jump power (50-200)
+- **NoClip** - Walk through walls and obstacles
+
+## Installation
+
+### Quick Loadstring
+```lua
+loadstring(game:HttpGet("https://raw.githubusercontent.com/awjz/beep/main/Beep.lua"))()
+```
+
+### Alternative Loader
+```lua
+loadstring(game:HttpGet("https://raw.githubusercontent.com/awjz/beep/main/loader.lua"))()
+```
 
 ## Usage
 
-```lua
-loadstring(game:HttpGet("https://raw.githubusercontent.com/YOUR_USERNAME/beep-tool/main/loader.lua"))()
-```
-
-Press **Insert** to toggle menu visibility.
+1. Execute the loadstring in your preferred executor
+2. The menu opens automatically on load
+3. Use **INSERT** key to toggle menu visibility
+4. Configure features through the tabbed interface
+5. Click **X** button to completely close and reset
 
 ## Controls
 
-- **Insert**: Show/Hide menu
-- **X Button**: Close and reset
-- **Drag**: Move window anywhere
+- **INSERT** - Toggle menu visibility
+- **Mouse Drag** - Move the menu window
+- **Tab Buttons** - Switch between feature categories
+- **Toggles** - Click ON/OFF buttons to enable/disable
+- **Sliders** - Drag to adjust numeric values
 
-## Config
+## Compatibility
 
-All settings adjust in real-time. No restart needed.
+Works with any Roblox game and most script executors including:
+- Synapse X / Synapse Z
+- Script-Ware
+- Krnl
+- Fluxus
+- Trigon
+- Arceus X
 
 ## Notes
 
-- Runs directly from CoreGui
-- Auto-cleanup on duplicate load
-- Smooth animations and transitions
-- Purple accent theme throughout
+- Menu persists through respawns
+- Anti-duplicate system prevents multiple instances
+- Smooth animations and purple-themed UI
+- All features run client-side only
+- Physics resets automatically on menu close
+
+## Requirements
+
+- Working Roblox executor with loadstring support
+- HttpGet enabled for external script loading
+
+---
+
+**Version:** 1.0  
+**Last Updated:** 2026
