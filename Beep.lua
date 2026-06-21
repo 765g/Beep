@@ -571,14 +571,10 @@ RunService.Stepped:Connect(function()
     if hum then
         if Config.Physics.SpeedEnabled then
             hum.WalkSpeed = Config.Physics.WalkSpeed
-        else
-            hum.WalkSpeed = 16
         end
         
         if Config.Physics.JumpEnabled then
             hum.JumpPower = Config.Physics.JumpPower
-        else
-            hum.JumpPower = 50
         end
         
         if Config.Physics.NoClip then
