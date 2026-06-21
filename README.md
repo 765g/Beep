@@ -17,8 +17,13 @@ Universal multi-tool for Roblox executors featuring combat automation, visual en
 - **3D Chams** - Full-body boxes on all character parts
 
 ### Physics Modifications
-- **Speed Control** - Adjust walk speed (16-150)
+- **Speed Control** - Adjustable walk speed (16-150)
+- **Speed Toggle** - Enable/disable speed boost individually
 - **Jump Enhancement** - Modify jump power (50-200)
+- **Jump Toggle** - Enable/disable jump boost individually
+- **Fly Mode** - Full 6-axis flight with WASD controls
+- **Fly Speed Control** - Adjustable fly speed (10-200)
+- **Custom Fly Keybind** - Assign any key to toggle fly mode
 - **NoClip** - Walk through walls and obstacles
 
 ## Installation
@@ -44,10 +49,15 @@ loadstring(game:HttpGet("https://raw.githubusercontent.com/awjz/beep-tool/main/l
 ## Controls
 
 - **INSERT** - Toggle menu visibility
+- **E** (default) - Toggle fly mode on/off
+- **W/A/S/D** - Move while flying
+- **SPACE** - Fly up
+- **LEFT SHIFT** - Fly down
 - **Mouse Drag** - Move the menu window
 - **Tab Buttons** - Switch between feature categories
 - **Toggles** - Click ON/OFF buttons to enable/disable
 - **Sliders** - Drag to adjust numeric values
+- **Keybind Button** - Click and press any key to rebind fly toggle
 
 ## Compatibility
 

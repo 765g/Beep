@@ -45,7 +45,12 @@ local Config = {
     Physics = {
         WalkSpeed = 16,
         JumpPower = 50,
-        NoClip = false
+        NoClip = false,
+        Fly = false,
+        FlySpeed = 50,
+        FlyKey = "E",
+        SpeedEnabled = false,
+        JumpEnabled = false
     }
 }
 
@@ -349,6 +354,39 @@ function UI:CreateSlider(parent, text, min, max, configSection, configKey, callb
     end)
 end
 
+function UI:CreateKeybind(parent, text, configSection, configKey)
+    local Frame = UI:Create("Frame", {Size = UDim2.new(1, -10, 0, 40), BackgroundColor3 = Color3.fromRGB(22, 18, 32), ZIndex = 4, Parent = parent})
+    Instance.new("UICorner", Frame).CornerRadius = UDim.new(0, 6)
+    
+    UI:Create("TextLabel", {Size = UDim2.new(0.5, 0, 1, 0), Position = UDim2.new(0, 10, 0, 0), BackgroundTransparency = 1, Text = text, TextColor3 = Color3.new(1,1,1), Font = Enum.Font.Gotham, TextSize = 13, TextXAlignment = Enum.TextXAlignment.Left, ZIndex = 5, Parent = Frame})
+    
+    local KeyButton = UI:Create("TextButton", {
+        Size = UDim2.new(0, 70, 0, 24), Position = UDim2.new(1, -80, 0.5, -12),
+        BackgroundColor3 = Color3.fromRGB(45, 35, 60),
+        Text = Config[configSection][configKey],
+        TextColor3 = Color3.new(1,1,1), Font = Enum.Font.GothamBold, TextSize = 11, ZIndex = 5, Parent = Frame
+    })
+    Instance.new("UICorner", KeyButton).CornerRadius = UDim.new(0, 6)
+    
+    local listening = false
+    KeyButton.MouseButton1Click:Connect(function()
+        if listening then return end
+        listening = true
+        KeyButton.Text = "..."
+        local connection
+        connection = UserInputService.InputBegan:Connect(function(input, gameProcessed)
+            if gameProcessed then return end
+            if input.UserInputType == Enum.UserInputType.Keyboard then
+                local key = input.KeyCode.Name
+                Config[configSection][configKey] = key
+                KeyButton.Text = key
+                listening = false
+                connection:Disconnect()
+            end
+        end)
+    end)
+end
+
 -- Combat System
 local Combat = {}
 function Combat:GetClosestPlayer()
@@ -455,13 +493,94 @@ for _, p in pairs(Players:GetPlayers()) do Visuals:DrawESPOnCharacter(p) end
 Players.PlayerAdded:Connect(function(p) Visuals:DrawESPOnCharacter(p) end)
 
 -- Physics System
+local FlyConnection = nil
+local FlyBodyVelocity = nil
+local FlyBodyGyro = nil
+
+local function EnableFly()
+    local char = LocalPlayer.Character
+    if not char then return end
+    local rootPart = char:FindFirstChild("HumanoidRootPart")
+    if not rootPart then return end
+    
+    if FlyBodyVelocity then FlyBodyVelocity:Destroy() end
+    if FlyBodyGyro then FlyBodyGyro:Destroy() end
+    
+    FlyBodyVelocity = Instance.new("BodyVelocity")
+    FlyBodyVelocity.Velocity = Vector3.new(0, 0, 0)
+    FlyBodyVelocity.MaxForce = Vector3.new(9e9, 9e9, 9e9)
+    FlyBodyVelocity.Parent = rootPart
+    
+    FlyBodyGyro = Instance.new("BodyGyro")
+    FlyBodyGyro.MaxTorque = Vector3.new(9e9, 9e9, 9e9)
+    FlyBodyGyro.P = 9e4
+    FlyBodyGyro.Parent = rootPart
+    
+    if FlyConnection then FlyConnection:Disconnect() end
+    FlyConnection = RunService.RenderStepped:Connect(function()
+        if not Config.Physics.Fly or not UI.Active then
+            if FlyBodyVelocity then FlyBodyVelocity:Destroy() FlyBodyVelocity = nil end
+            if FlyBodyGyro then FlyBodyGyro:Destroy() FlyBodyGyro = nil end
+            if FlyConnection then FlyConnection:Disconnect() FlyConnection = nil end
+            return
+        end
+        
+        local cam = Camera.CFrame
+        local direction = Vector3.new(0, 0, 0)
+        
+        if UserInputService:IsKeyDown(Enum.KeyCode.W) then direction = direction + (cam.LookVector) end
+        if UserInputService:IsKeyDown(Enum.KeyCode.S) then direction = direction - (cam.LookVector) end
+        if UserInputService:IsKeyDown(Enum.KeyCode.A) then direction = direction - (cam.RightVector) end
+        if UserInputService:IsKeyDown(Enum.KeyCode.D) then direction = direction + (cam.RightVector) end
+        if UserInputService:IsKeyDown(Enum.KeyCode.Space) then direction = direction + Vector3.new(0, 1, 0) end
+        if UserInputService:IsKeyDown(Enum.KeyCode.LeftShift) then direction = direction - Vector3.new(0, 1, 0) end
+        
+        if direction.Magnitude > 0 then
+            direction = direction.Unit
+        end
+        
+        FlyBodyVelocity.Velocity = direction * Config.Physics.FlySpeed
+        FlyBodyGyro.CFrame = cam
+    end)
+end
+
+local function DisableFly()
+    if FlyBodyVelocity then FlyBodyVelocity:Destroy() FlyBodyVelocity = nil end
+    if FlyBodyGyro then FlyBodyGyro:Destroy() FlyBodyGyro = nil end
+    if FlyConnection then FlyConnection:Disconnect() FlyConnection = nil end
+end
+
+UserInputService.InputBegan:Connect(function(input, gameProcessed)
+    if not UI.Active or gameProcessed then return end
+    if input.KeyCode.Name == Config.Physics.FlyKey then
+        Config.Physics.Fly = not Config.Physics.Fly
+        if Config.Physics.Fly then
+            EnableFly()
+            UI:Notify("Fly Mode: ON")
+        else
+            DisableFly()
+            UI:Notify("Fly Mode: OFF")
+        end
+    end
+end)
+
 RunService.Stepped:Connect(function()
     if not UI.Active then return end
     local char = LocalPlayer.Character
     local hum = char and char:FindFirstChildOfClass("Humanoid")
     if hum then
-        hum.WalkSpeed = Config.Physics.WalkSpeed
-        hum.JumpPower = Config.Physics.JumpPower
+        if Config.Physics.SpeedEnabled then
+            hum.WalkSpeed = Config.Physics.WalkSpeed
+        else
+            hum.WalkSpeed = 16
+        end
+        
+        if Config.Physics.JumpEnabled then
+            hum.JumpPower = Config.Physics.JumpPower
+        else
+            hum.JumpPower = 50
+        end
+        
         if Config.Physics.NoClip then
             for _, part in pairs(char:GetDescendants()) do
                 if part:IsA("BasePart") then part.CanCollide = false end
@@ -488,8 +607,19 @@ UI:CreateToggle(VisualsPage, "Show IDs", "Visuals", "IDs")
 UI:CreateToggle(VisualsPage, "3D Boxes / Chams", "Visuals", "Skeletons")
 
 -- Physics Controls
+UI:CreateToggle(PhysicsPage, "Enable Speed Boost", "Physics", "SpeedEnabled")
 UI:CreateSlider(PhysicsPage, "Walk Speed", 16, 150, "Physics", "WalkSpeed")
+UI:CreateToggle(PhysicsPage, "Enable Jump Boost", "Physics", "JumpEnabled")
 UI:CreateSlider(PhysicsPage, "Jump Power", 50, 200, "Physics", "JumpPower")
 UI:CreateToggle(PhysicsPage, "NoClip", "Physics", "NoClip")
+UI:CreateToggle(PhysicsPage, "Fly Mode", "Physics", "Fly", function(state)
+    if state then
+        EnableFly()
+    else
+        DisableFly()
+    end
+end)
+UI:CreateSlider(PhysicsPage, "Fly Speed", 10, 200, "Physics", "FlySpeed")
+UI:CreateKeybind(PhysicsPage, "Fly Toggle Key", "Physics", "FlyKey")
 
 UI:Notify("Beep loaded. Press 'Insert' to toggle menu.")
