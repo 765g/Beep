@@ -1,0 +1,15 @@
+BEEP FRAMEWORK - LOADSTRING
+
+Copy and paste this into your executor:
+
+loadstring(game:HttpGet("https://raw.githubusercontent.com/awjz/beep-tool/main/Beep.lua"))()
+
+
+Alternative loader:
+
+loadstring(game:HttpGet("https://raw.githubusercontent.com/awjz/beep-tool/main/loader.lua"))()
+
+
+Version 1.0.0 (Stable):
+
+loadstring(game:HttpGet("https://raw.githubusercontent.com/awjz/beep-tool/v1.0.0/Beep.lua"))()
