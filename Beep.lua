@@ -136,7 +136,7 @@ Instance.new("UICorner", CloseMenuBtn).CornerRadius = UDim.new(0, 6)
 
 CloseMenuBtn.MouseButton1Click:Connect(function()
     UI.Active = false
-    DisableFly()
+    Config.Physics.Fly = false
     UI.Screen:Destroy()
 end)
 
