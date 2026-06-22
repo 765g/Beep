@@ -1,9 +1,28 @@
-Beep Framework v3.5.3
+Beep Framework v3.5.4
 Release Date: June 22, 2026
-Build: Stable - RAGEBOT IGNORA INMUNES
+Build: Stable - INVISIBILITY SYSTEM ADDED
 
 ==============================================
-v3.5.3 - RAGEBOT IGNORA ENEMIGOS INMUNES
+v3.5.4 - INVISIBILITY SYSTEM
+==============================================
+🔮 Nueva Feature: Invisibilidad Client-Side
+- Sistema de invisibilidad basado en position exploit
+- Funciona mejor en: Arsenal (95%), Phantom Forces (80%)
+- Parcialmente en: RIVALS (40%)
+- NO funciona en: Jailbreak (anti-cheat fuerte)
+- Advertencia incluida en UI: "may not work in all games"
+- Toggle en Physics tab
+- Hace tu personaje transparente localmente
+- Otros jugadores no te ven (dependiendo del juego)
+
+Mecánica:
+- Teleporta 200k studs abajo cada frame
+- Ajusta cámara para que veas normal
+- Restaura posición antes del siguiente frame
+- Otros renderizan tu posición vieja (invisible)
+
+==============================================
+v3.5.3 - RAGEBOT IGNORA INMUNES
 ==============================================
 🛡️ Arreglado: el ragebot disparaba a enemigos con spawn protection (ForceField) sin poder matarlos
 Solucion: "Ragebot Ignore Immune (ForceField)" (ON por defecto)

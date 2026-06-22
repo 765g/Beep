@@ -2,7 +2,7 @@
 -- Universal ESP, Aimbot & Physics Controller
 
 -- VERSION CONTROL (Update this for each new version)
-local BEEP_VERSION = "v3.5.3"
+local BEEP_VERSION = "v3.5.4"
 
 local StartTime = tick()
 if not game:IsLoaded() then
@@ -101,7 +101,10 @@ local Config = {
         ClickTP = false,
         ClickTPKey = "LeftControl",
         FlyActive = false,
-        NoClipActive = false
+        NoClipActive = false,
+        -- Invisibility System
+        Invisibility = false,
+        InvisibilityActive = false
     },
     Misc = {
         Fullbright = false,
@@ -2321,6 +2324,24 @@ end)
 UI:CreateSlider(PhysicsPage, "Fly Speed", 10, 500, "Physics", "FlySpeed")
 UI:CreateKeybind(PhysicsPage, "Fly Toggle Key", "Physics", "FlyKey")
 
+-- Invisibility System
+UI:CreateToggle(PhysicsPage, "Invisibility (may not work in all games)", "Physics", "Invisibility", function(state)
+    Config.Physics.InvisibilityActive = state
+    if state then
+        UI:Notify("⚠️ Invisibility ON (works best in Arsenal, Phantom Forces)")
+        -- Make character transparent
+        for _, v in pairs(InvisibilityParts) do
+            v.Transparency = 1
+        end
+    else
+        UI:Notify("Invisibility OFF")
+        -- Restore character visibility
+        for _, v in pairs(InvisibilityParts) do
+            v.Transparency = 0
+        end
+    end
+end)
+
 -- Misc Controls
 UI:CreateToggle(MiscPage, "Watermark", "Misc", "Watermark")
 UI:CreateToggle(MiscPage, "Remove Fog", "Misc", "RemoveFog")
@@ -2592,3 +2613,79 @@ ExitCheatBtn.MouseButton1Click:Connect(function()
 end)
 
 UI:Notify("Beep loaded. Press 'Insert' to toggle menu.")
+
+
+--==================================================================--
+-- INVISIBILITY SYSTEM (Client-Side Position Exploit)
+-- Works best in: Arsenal, Phantom Forces
+-- May not work in: RIVALS, Jailbreak (server-side validation)
+--==================================================================--
+
+local InvisibilityParts = {}
+local InvisibilityEnabled = false
+
+local function BindInvisibilityCharacter()
+    local character = LocalPlayer.Character
+    if not character then return end
+    
+    local humanoid = character:FindFirstChild("Humanoid")
+    local hrp = character:FindFirstChild("HumanoidRootPart")
+    if not humanoid or not hrp then return end
+    
+    InvisibilityParts = {}
+    for _, v in pairs(character:GetDescendants()) do
+        if v:IsA("BasePart") then
+            table.insert(InvisibilityParts, v)
+        end
+    end
+    
+    return character, humanoid, hrp
+end
+
+local function InvisibilityStep()
+    if not Config.Physics.InvisibilityActive then return end
+    
+    local character, humanoid, hrp = BindInvisibilityCharacter()
+    if not character or not humanoid or not hrp then return end
+    
+    -- Save real position
+    local oldCFrame = hrp.CFrame
+    local oldOffset = humanoid.CameraOffset
+    
+    -- Teleport far below map
+    local newCFrame = hrp.CFrame * CFrame.new(0, -200000, 0)
+    hrp.CFrame = newCFrame
+    
+    -- Adjust camera so you see normal
+    humanoid.CameraOffset = newCFrame:ToObjectSpace(CFrame.new(hrp.CFrame.Position)).Position
+    
+    -- Wait 1 frame
+    RunService.RenderStepped:Wait()
+    
+    -- Restore position
+    hrp.CFrame = oldCFrame
+    humanoid.CameraOffset = oldOffset
+end
+
+-- Main invisibility loop
+task.spawn(function()
+    while task.wait() do
+        if Config.Physics.InvisibilityActive then
+            pcall(InvisibilityStep)
+        end
+    end
+end)
+
+-- Character respawn handler for invisibility
+LocalPlayer.CharacterAdded:Connect(function()
+    task.wait(1)
+    BindInvisibilityCharacter()
+    if Config.Physics.InvisibilityActive then
+        -- Reapply transparency
+        for _, v in pairs(InvisibilityParts) do
+            v.Transparency = 1
+        end
+    end
+end)
+
+print("[Beep] Invisibility system loaded (may not work in all games)")
