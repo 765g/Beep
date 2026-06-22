@@ -2645,34 +2645,37 @@ end
 local function InvisibilityStep()
     if not Config.Physics.InvisibilityActive then return end
     
-    local character, humanoid, hrp = BindInvisibilityCharacter()
-    if not character or not humanoid or not hrp then return end
+    local character = LocalPlayer.Character
+    if not character then return end
+    
+    local humanoid = character:FindFirstChild("Humanoid")
+    local hrp = character:FindFirstChild("HumanoidRootPart")
+    if not humanoid or not hrp then return end
     
     -- Save real position
     local oldCFrame = hrp.CFrame
     local oldOffset = humanoid.CameraOffset
     
     -- Teleport far below map
-    local newCFrame = hrp.CFrame * CFrame.new(0, -200000, 0)
-    hrp.CFrame = newCFrame
+    local fakePos = CFrame.new(hrp.Position.X, -200000, hrp.Position.Z)
+    hrp.CFrame = fakePos
     
-    -- Adjust camera so you see normal
-    humanoid.CameraOffset = newCFrame:ToObjectSpace(CFrame.new(hrp.CFrame.Position)).Position
+    -- Adjust camera offset to show real position
+    humanoid.CameraOffset = Vector3.new(0, 200000, 0)
     
-    -- Wait 1 frame
-    RunService.RenderStepped:Wait()
-    
-    -- Restore position
-    hrp.CFrame = oldCFrame
-    humanoid.CameraOffset = oldOffset
+    -- Schedule restoration after render
+    task.defer(function()
+        if hrp and hrp.Parent then
+            hrp.CFrame = oldCFrame
+            humanoid.CameraOffset = oldOffset
+        end
+    end)
 end
 
--- Main invisibility loop
-task.spawn(function()
-    while task.wait() do
-        if Config.Physics.InvisibilityActive then
-            pcall(InvisibilityStep)
-        end
+-- Main invisibility loop (runs on Heartbeat, not blocking)
+RunService.Heartbeat:Connect(function()
+    if Config.Physics.InvisibilityActive then
+        pcall(InvisibilityStep)
     end
 end)
 
