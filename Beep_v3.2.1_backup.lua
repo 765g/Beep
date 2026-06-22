@@ -2,7 +2,7 @@
 -- Universal ESP, Aimbot & Physics Controller
 
 -- VERSION CONTROL (Update this for each new version)
-local BEEP_VERSION = "v3.4.0"
+local BEEP_VERSION = "v3.2.2"
 
 local StartTime = tick()
 if not game:IsLoaded() then
@@ -34,7 +34,7 @@ local Config = {
     Visuals = {
         Enabled = false,
         Names = false,
-        Distance = false,
+        Distance = true,
         IDs = false,
         Skeletons = false,
         SkeletonESP = false,
@@ -42,14 +42,14 @@ local Config = {
         HealthBars = false,
         BoxESP = false,
         HeadDot = false,
-        Accent = Color3.fromRGB(96, 116, 158)
+        Accent = Color3.fromRGB(140, 80, 255)
     },
     Combat = {
         SilentAim = false,
         FOV = 150,
         Smoothness = 0.5,
         TargetPart = "Head",
-        ShowFOV = false,
+        ShowFOV = true,
         LockKey = "Q",
         LockedTarget = nil,
         Triggerbot = false,
@@ -66,18 +66,7 @@ local Config = {
         AutoReload = false,
         KillAura = false,
         KillAuraRange = 20,
-        KillAuraTeamCheck = true,
-        -- Ragebot
-        Ragebot = false,
-        RagebotTargetPart = "Head",
-        RagebotMode = "Closest",
-        RagebotFullMap = true,
-        RagebotAutoShoot = true,
-        RagebotFireRate = 0.05,
-        RagebotTeamCheck = true,
-        RagebotVisibleCheck = false,
-        RagebotMaxDistance = 5000,
-        RagebotPrediction = 0
+        KillAuraTeamCheck = true
     },
     Physics = {
         Speed = 1,
@@ -87,13 +76,10 @@ local Config = {
         FlySpeed = 50,
         FlyKey = "E",
         SpeedEnabled = false,
-        SpeedActive = false,
         SpeedKey = "LeftControl",
         JumpEnabled = false,
         ClickTP = false,
-        ClickTPKey = "LeftControl",
-        FlyActive = false,
-        NoClipActive = false
+        ClickTPKey = "LeftControl"
     },
     Misc = {
         Fullbright = false,
@@ -105,11 +91,12 @@ local Config = {
         RemoveFog = false,
         Watermark = true,
         ThemeColor = 1,
+        ESPToggleKey = "F1",
         NoClipToggleKey = "F2"
     },
     UI = {
         ThemeColors = {
-            Color3.fromRGB(96, 116, 158), -- Steel (sober default)
+            Color3.fromRGB(140, 80, 255), -- Purple (default)
             Color3.fromRGB(255, 80, 80),  -- Red
             Color3.fromRGB(80, 160, 255), -- Blue
             Color3.fromRGB(80, 255, 120), -- Green
@@ -121,18 +108,6 @@ local Config = {
 
 -- UI Constructor
 local UI = { Tabs = {}, CurrentTab = nil, Visible = true, Active = true }
-
--- Accent registry: elements that should recolor when the theme changes
-local AccentObjects = {}
-local function RegisterAccent(fn)
-    table.insert(AccentObjects, fn)
-    pcall(fn, Config.Visuals.Accent)
-end
-local function RefreshAccent(color)
-    for _, fn in ipairs(AccentObjects) do
-        pcall(fn, color)
-    end
-end
 
 function UI:Create(class, props)
     local inst = Instance.new(class)
@@ -150,190 +125,52 @@ UI.Screen = UI:Create("ScreenGui", {
 })
 
 local Main = UI:Create("Frame", {
-    Size = UDim2.new(0, 660, 0, 480), 
-    Position = UDim2.new(0.5, -330, 0.5, -240),
-    BackgroundColor3 = Color3.fromRGB(16, 16, 19),
+    Size = UDim2.new(0, 640, 0, 460), 
+    Position = UDim2.new(0.5, -320, 0.5, -230),
+    BackgroundColor3 = Color3.fromRGB(12, 10, 18),
     BorderSizePixel = 0, 
-    ClipsDescendants = true,
     ZIndex = 1,
     Parent = UI.Screen
 })
 Instance.new("UICorner", Main).CornerRadius = UDim.new(0, 12)
 
--- Subtle gradient on main background
-UI:Create("UIGradient", {
-    Color = ColorSequence.new({
-        ColorSequenceKeypoint.new(0, Color3.fromRGB(22, 23, 27)),
-        ColorSequenceKeypoint.new(1, Color3.fromRGB(13, 13, 16))
-    }),
-    Rotation = 90,
-    Parent = Main
-})
-
 local MainStroke = UI:Create("UIStroke", {
-    Color = Color3.fromRGB(48, 51, 60),
+    Color = Color3.fromRGB(60, 40, 90),
     Thickness = 1.5, 
-    Transparency = 0.2,
     Parent = Main
 })
-
--- ===== TOP BAR (Title + Window Controls) =====
-local TopBar = UI:Create("Frame", {
-    Size = UDim2.new(1, 0, 0, 46),
-    BackgroundColor3 = Color3.fromRGB(20, 21, 25),
-    BorderSizePixel = 0,
-    ZIndex = 6,
-    Parent = Main
-})
-Instance.new("UICorner", TopBar).CornerRadius = UDim.new(0, 12)
--- cover bottom rounded corners of topbar
-UI:Create("Frame", {
-    Size = UDim2.new(1, 0, 0, 14), Position = UDim2.new(0, 0, 1, -14),
-    BackgroundColor3 = Color3.fromRGB(20, 21, 25), BorderSizePixel = 0, ZIndex = 6, Parent = TopBar
-})
--- bottom border line of topbar
-UI:Create("Frame", {
-    Size = UDim2.new(1, 0, 0, 1), Position = UDim2.new(0, 0, 1, -1),
-    BackgroundColor3 = Color3.fromRGB(40, 42, 50), BorderSizePixel = 0, ZIndex = 7, Parent = TopBar
-})
-
--- Accent dot / logo mark
-local LogoMark = UI:Create("Frame", {
-    Size = UDim2.new(0, 10, 0, 10),
-    Position = UDim2.new(0, 18, 0.5, -5),
-    BackgroundColor3 = Config.Visuals.Accent,
-    ZIndex = 7,
-    Parent = TopBar
-})
-Instance.new("UICorner", LogoMark).CornerRadius = UDim.new(1, 0)
-RegisterAccent(function(c) LogoMark.BackgroundColor3 = c end)
-
-local TitleLabel = UI:Create("TextLabel", {
-    Size = UDim2.new(0, 70, 1, 0),
-    Position = UDim2.new(0, 36, 0, 0),
-    BackgroundTransparency = 1,
-    Text = "Beep",
-    TextColor3 = Color3.fromRGB(235, 236, 240),
-    Font = Enum.Font.GothamBold,
-    TextSize = 17,
-    TextXAlignment = Enum.TextXAlignment.Left,
-    ZIndex = 7,
-    Parent = TopBar
-})
-
--- Version badge
-local VersionBadge = UI:Create("TextLabel", {
-    Size = UDim2.new(0, 50, 0, 20),
-    Position = UDim2.new(0, 94, 0.5, -10),
-    BackgroundColor3 = Color3.fromRGB(32, 34, 41),
-    Text = BEEP_VERSION,
-    TextColor3 = Config.Visuals.Accent,
-    Font = Enum.Font.GothamSemibold,
-    TextSize = 11,
-    ZIndex = 7,
-    Parent = TopBar
-})
-Instance.new("UICorner", VersionBadge).CornerRadius = UDim.new(0, 6)
-RegisterAccent(function(c) VersionBadge.TextColor3 = c end)
-
--- Close button (hides menu)
-local CloseBtn = UI:Create("TextButton", {
-    Size = UDim2.new(0, 30, 0, 30),
-    Position = UDim2.new(1, -38, 0.5, -15),
-    BackgroundColor3 = Color3.fromRGB(34, 34, 40),
-    Text = "X",
-    TextColor3 = Color3.fromRGB(210, 120, 120),
-    Font = Enum.Font.GothamBold,
-    TextSize = 13,
-    AutoButtonColor = false,
-    ZIndex = 7,
-    Parent = TopBar
-})
-Instance.new("UICorner", CloseBtn).CornerRadius = UDim.new(0, 8)
-
--- Minimize button
-local MinimizeBtn = UI:Create("TextButton", {
-    Size = UDim2.new(0, 30, 0, 30),
-    Position = UDim2.new(1, -74, 0.5, -15),
-    BackgroundColor3 = Color3.fromRGB(30, 31, 38),
-    Text = "—",
-    TextColor3 = Color3.fromRGB(190, 192, 200),
-    Font = Enum.Font.GothamBold,
-    TextSize = 14,
-    AutoButtonColor = false,
-    ZIndex = 7,
-    Parent = TopBar
-})
-Instance.new("UICorner", MinimizeBtn).CornerRadius = UDim.new(0, 8)
-
-CloseBtn.MouseEnter:Connect(function()
-    TweenService:Create(CloseBtn, TweenInfo.new(0.15), {BackgroundColor3 = Color3.fromRGB(160, 60, 60)}):Play()
-end)
-CloseBtn.MouseLeave:Connect(function()
-    TweenService:Create(CloseBtn, TweenInfo.new(0.15), {BackgroundColor3 = Color3.fromRGB(34, 34, 40)}):Play()
-end)
-CloseBtn.MouseButton1Click:Connect(function()
-    UI.Visible = false
-    Main.Visible = false
-    UI:Notify("Menu hidden. Press 'Insert' to reopen.")
-end)
-
-MinimizeBtn.MouseEnter:Connect(function()
-    TweenService:Create(MinimizeBtn, TweenInfo.new(0.15), {BackgroundColor3 = Color3.fromRGB(46, 48, 58)}):Play()
-end)
-MinimizeBtn.MouseLeave:Connect(function()
-    TweenService:Create(MinimizeBtn, TweenInfo.new(0.15), {BackgroundColor3 = Color3.fromRGB(30, 31, 38)}):Play()
-end)
-local minimized = false
-MinimizeBtn.MouseButton1Click:Connect(function()
-    minimized = not minimized
-    -- Main has ClipsDescendants = true, so shrinking hides all content automatically
-    if minimized then
-        TweenService:Create(Main, TweenInfo.new(0.25, Enum.EasingStyle.Quad), {Size = UDim2.new(0, 660, 0, 46)}):Play()
-    else
-        TweenService:Create(Main, TweenInfo.new(0.25, Enum.EasingStyle.Quad), {Size = UDim2.new(0, 660, 0, 480)}):Play()
-    end
-end)
 
 -- Sidebar
 local Sidebar = UI:Create("Frame", {
-    Size = UDim2.new(0, 168, 1, -46), 
-    Position = UDim2.new(0, 0, 0, 46),
-    BackgroundColor3 = Color3.fromRGB(18, 18, 22),
-    BorderSizePixel = 0,
+    Size = UDim2.new(0, 160, 1, 0), 
+    BackgroundColor3 = Color3.fromRGB(18, 14, 26),
     ZIndex = 2,
     Parent = Main
 })
-
--- Sidebar separator line
-UI:Create("Frame", {
-    Size = UDim2.new(0, 1, 1, -20), Position = UDim2.new(1, 0, 0, 10),
-    BackgroundColor3 = Color3.fromRGB(38, 40, 48), BorderSizePixel = 0, ZIndex = 2, Parent = Sidebar
-})
+Instance.new("UICorner", Sidebar).CornerRadius = UDim.new(0, 12)
 
 -- Pages Container (Adjusted to be below search bar)
 local Container = UI:Create("Frame", {
-    Size = UDim2.new(1, -188, 1, -150), 
-    Position = UDim2.new(0, 180, 0, 102),
+    Size = UDim2.new(1, -170, 1, -135), 
+    Position = UDim2.new(0, 170, 0, 95),
     BackgroundTransparency = 1, 
     ZIndex = 2,
     Parent = Main
 })
 
--- Branding (kept for theme-changer compatibility, placed at sidebar bottom)
+-- Branding
 local ProjectLabel = UI:Create("TextLabel", {
-    Size = UDim2.new(0, 150, 0, 20),
-    Position = UDim2.new(0, 16, 1, -28),
+    Size = UDim2.new(0, 200, 0, 20),
+    Position = UDim2.new(0, 15, 1, -25),
     BackgroundTransparency = 1,
     Text = "Beep " .. BEEP_VERSION,
     TextColor3 = Config.Visuals.Accent,
-    Font = Enum.Font.GothamSemibold,
-    TextSize = 12,
+    Font = Enum.Font.GothamBold,
+    TextSize = 13,
     TextXAlignment = Enum.TextXAlignment.Left,
     ZIndex = 5,
-    Parent = Sidebar
+    Parent = Main
 })
-RegisterAccent(function(c) ProjectLabel.TextColor3 = c end)
 
 -- Watermark
 local Watermark = UI:Create("TextLabel", {
@@ -354,10 +191,6 @@ local Watermark = UI:Create("TextLabel", {
 UI:Create("UIPadding", {PaddingLeft = UDim.new(0, 10), PaddingTop = UDim.new(0, 10), Parent = Watermark})
 Instance.new("UICorner", Watermark).CornerRadius = UDim.new(0, 8)
 UI:Create("UIStroke", {Color = Config.Visuals.Accent, Thickness = 1, Transparency = 0.5, Parent = Watermark})
-RegisterAccent(function(c)
-    local s = Watermark and Watermark:FindFirstChildOfClass("UIStroke")
-    if s then s.Color = c end
-end)
 
 -- Make Watermark Draggable
 local watermarkDragging = false
@@ -406,21 +239,21 @@ end)
 
 -- Search Bar (Below the menu, doesn't cover content)
 local SearchBar = UI:Create("Frame", {
-    Size = UDim2.new(1, -200, 0, 38),
-    Position = UDim2.new(0, 180, 0, 56),
-    BackgroundColor3 = Color3.fromRGB(26, 27, 32),
+    Size = UDim2.new(0, 450, 0, 35),
+    Position = UDim2.new(0, 170, 0, 50),
+    BackgroundColor3 = Color3.fromRGB(22, 18, 32),
     ZIndex = 15,
     Parent = Main
 })
-Instance.new("UICorner", SearchBar).CornerRadius = UDim.new(0, 10)
-UI:Create("UIStroke", {Color = Color3.fromRGB(46, 48, 56), Thickness = 1, Transparency = 0.4, Parent = SearchBar})
+Instance.new("UICorner", SearchBar).CornerRadius = UDim.new(0, 6)
+UI:Create("UIStroke", {Color = Config.Visuals.Accent, Thickness = 1, Transparency = 0.5, Parent = SearchBar})
 
 local SearchBox = UI:Create("TextBox", {
-    Size = UDim2.new(1, -16, 1, -10),
-    Position = UDim2.new(0, 12, 0, 5),
+    Size = UDim2.new(1, -10, 1, -10),
+    Position = UDim2.new(0, 5, 0, 5),
     BackgroundTransparency = 1,
     Text = "",
-    PlaceholderText = "🔍  Search any hack across all tabs...",
+    PlaceholderText = "🔍 Search any hack (works across all tabs)...",
     TextColor3 = Color3.new(1, 1, 1),
     PlaceholderColor3 = Color3.fromRGB(150, 140, 160),
     Font = Enum.Font.Gotham,
@@ -505,37 +338,29 @@ function UI:Notify(text)
     if not UI.Active then return end
     task.spawn(function()
         local n = UI:Create("Frame", {
-            Size = UDim2.new(0, 290, 0, 48), 
+            Size = UDim2.new(0, 280, 0, 45), 
             Position = UDim2.new(1, 10, 0.8, 0),
-            BackgroundColor3 = Color3.fromRGB(22, 23, 28), 
+            BackgroundColor3 = Color3.fromRGB(20, 15, 30), 
             ZIndex = 20,
             Parent = UI.Screen
         })
-        Instance.new("UICorner", n).CornerRadius = UDim.new(0, 10)
-        UI:Create("UIStroke", {Color = Config.Visuals.Accent, Thickness = 1.5, Transparency = 0.3, Parent = n})
-
-        -- accent side bar
-        local bar = UI:Create("Frame", {
-            Size = UDim2.new(0, 4, 1, -16), Position = UDim2.new(0, 8, 0, 8),
-            BackgroundColor3 = Config.Visuals.Accent, ZIndex = 21, Parent = n
-        })
-        Instance.new("UICorner", bar).CornerRadius = UDim.new(1, 0)
+        Instance.new("UICorner", n).CornerRadius = UDim.new(0, 8)
+        UI:Create("UIStroke", {Color = Config.Visuals.Accent, Thickness = 1, Parent = n})
         
         UI:Create("TextLabel", {
-            Size = UDim2.new(1, -30, 1, 0), 
-            Position = UDim2.new(0, 20, 0, 0),
+            Size = UDim2.new(1, -20, 1, 0), 
+            Position = UDim2.new(0, 10, 0, 0),
             BackgroundTransparency = 1, 
             Text = text,
             TextColor3 = Color3.new(1,1,1), 
-            Font = Enum.Font.GothamMedium, 
+            Font = Enum.Font.GothamBold, 
             TextSize = 12,
             TextXAlignment = Enum.TextXAlignment.Left,
-            TextWrapped = true,
             ZIndex = 21,
             Parent = n
         })
         
-        n:TweenPosition(UDim2.new(0.98, -290, 0.8, 0), "Out", "Back", 0.4)
+        n:TweenPosition(UDim2.new(0.98, -280, 0.8, 0), "Out", "Back", 0.4)
         task.wait(3)
         if n and n.Parent then
             n:TweenPosition(UDim2.new(1, 10, 0.8, 0), "In", "Quad", 0.4)
@@ -556,7 +381,7 @@ local function updateInput(input)
     TweenService:Create(Main, TweenInfo.new(0.10), {Position = position}):Play()
 end
 
-TopBar.InputBegan:Connect(function(input)
+Main.InputBegan:Connect(function(input)
     if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
         dragToggle = true
         dragStart = input.Position
@@ -584,7 +409,6 @@ local FOVContainer = UI:Create("Frame", {
 })
 local FOVStroke = UI:Create("UIStroke", {Color = Config.Visuals.Accent, Thickness = 1, Transparency = 0.5, Parent = FOVContainer})
 Instance.new("UICorner", FOVContainer).CornerRadius = UDim.new(1, 0)
-RegisterAccent(function(c) FOVStroke.Color = c end)
 
 RunService.RenderStepped:Connect(function()
     if not UI.Active then return end
@@ -614,13 +438,11 @@ function UI:CreateTab(name)
         Size = UDim2.new(1, 0, 1, 0),
         BackgroundTransparency = 1,
         CanvasSize = UDim2.new(0, 0, 0, 0),
-        ScrollBarThickness = 3,
-        ScrollBarImageColor3 = Config.Visuals.Accent,
+        ScrollBarThickness = 2,
         Visible = false,
         ZIndex = 3,
         Parent = Container
     })
-    RegisterAccent(function(c) Page.ScrollBarImageColor3 = c end)
     local Layout = UI:Create("UIListLayout", {
         Padding = UDim.new(0, 8),
         SortOrder = Enum.SortOrder.LayoutOrder,
@@ -632,174 +454,78 @@ function UI:CreateTab(name)
     end)
     
     local TabButton = UI:Create("TextButton", {
-        Size = UDim2.new(0, 148, 0, 38),
-        Position = UDim2.new(0, 10, 0, 16 + (tabIndex * 46)),
-        BackgroundColor3 = Color3.fromRGB(28, 29, 35),
-        BackgroundTransparency = tabIndex == 0 and 0 or 1,
-        Text = "",
-        AutoButtonColor = false,
+        Size = UDim2.new(0, 140, 0, 35),
+        Position = UDim2.new(0, 10, 0, 20 + (tabIndex * 42)),
+        BackgroundColor3 = Color3.fromRGB(26, 20, 36),
+        Text = name,
+        TextColor3 = Color3.fromRGB(150, 140, 160),
+        Font = Enum.Font.GothamMedium,
+        TextSize = 13,
         ZIndex = 3,
         Parent = Sidebar
     })
-    Instance.new("UICorner", TabButton).CornerRadius = UDim.new(0, 10)
-
-    -- Accent selection indicator (left bar)
-    local Indicator = UI:Create("Frame", {
-        Size = UDim2.new(0, 3, 0, tabIndex == 0 and 22 or 0),
-        Position = UDim2.new(0, 0, 0.5, tabIndex == 0 and -11 or 0),
-        BackgroundColor3 = Config.Visuals.Accent,
-        BorderSizePixel = 0,
-        ZIndex = 4,
-        Parent = TabButton
-    })
-    Instance.new("UICorner", Indicator).CornerRadius = UDim.new(1, 0)
-    RegisterAccent(function(c) Indicator.BackgroundColor3 = c end)
-
-    local TabLabel = UI:Create("TextLabel", {
-        Size = UDim2.new(1, -20, 1, 0),
-        Position = UDim2.new(0, 16, 0, 0),
-        BackgroundTransparency = 1,
-        Text = name,
-        TextColor3 = tabIndex == 0 and Color3.new(1,1,1) or Color3.fromRGB(150, 140, 160),
-        Font = Enum.Font.GothamMedium,
-        TextSize = 13,
-        TextXAlignment = Enum.TextXAlignment.Left,
-        ZIndex = 5,
-        Parent = TabButton
-    })
-
-    TabButton.MouseEnter:Connect(function()
-        if not Page.Visible then
-            TweenService:Create(TabButton, TweenInfo.new(0.15), {BackgroundTransparency = 0.5}):Play()
-            TweenService:Create(TabLabel, TweenInfo.new(0.15), {TextColor3 = Color3.fromRGB(210, 200, 220)}):Play()
-        end
-    end)
-    TabButton.MouseLeave:Connect(function()
-        if not Page.Visible then
-            TweenService:Create(TabButton, TweenInfo.new(0.15), {BackgroundTransparency = 1}):Play()
-            TweenService:Create(TabLabel, TweenInfo.new(0.15), {TextColor3 = Color3.fromRGB(150, 140, 160)}):Play()
-        end
-    end)
+    Instance.new("UICorner", TabButton).CornerRadius = UDim.new(0, 6)
     
     TabButton.MouseButton1Click:Connect(function()
         for _, v in pairs(Container:GetChildren()) do if v:IsA("ScrollingFrame") then v.Visible = false end end
         for _, v in pairs(Sidebar:GetChildren()) do 
-            if v:IsA("TextButton") then 
-                local lbl = v:FindFirstChildOfClass("TextLabel")
-                local ind = v:FindFirstChildOfClass("Frame")
-                if lbl then TweenService:Create(lbl, TweenInfo.new(0.15), {TextColor3 = Color3.fromRGB(150, 140, 160)}):Play() end
-                TweenService:Create(v, TweenInfo.new(0.15), {BackgroundTransparency = 1}):Play()
-                if ind then TweenService:Create(ind, TweenInfo.new(0.15), {Size = UDim2.new(0, 3, 0, 0), Position = UDim2.new(0, 0, 0.5, 0)}):Play() end
-            end 
+            if v:IsA("TextButton") then v.TextColor3 = Color3.fromRGB(150, 140, 160) end 
         end
         Page.Visible = true
-        TweenService:Create(TabButton, TweenInfo.new(0.15), {BackgroundTransparency = 0}):Play()
-        TweenService:Create(TabLabel, TweenInfo.new(0.15), {TextColor3 = Color3.new(1,1,1)}):Play()
-        TweenService:Create(Indicator, TweenInfo.new(0.15), {Size = UDim2.new(0, 3, 0, 22), Position = UDim2.new(0, 0, 0.5, -11)}):Play()
+        TabButton.TextColor3 = Config.Visuals.Accent
     end)
     
     if tabIndex == 0 then
         Page.Visible = true
+        TabButton.TextColor3 = Config.Visuals.Accent
     end
     
     table.insert(UI.Tabs, Page)
     return Page
 end
 
--- Storage for toggle indicators (for keybind updates)
-local ToggleIndicators = {}
-
--- Helper to animate a switch visual
-local function SetSwitchVisual(track, knob, state)
-    TweenService:Create(track, TweenInfo.new(0.18, Enum.EasingStyle.Quad), {
-        BackgroundColor3 = state and Config.Visuals.Accent or Color3.fromRGB(50, 52, 60)
-    }):Play()
-    TweenService:Create(knob, TweenInfo.new(0.18, Enum.EasingStyle.Quad), {
-        Position = state and UDim2.new(1, -20, 0.5, -8) or UDim2.new(0, 4, 0.5, -8)
-    }):Play()
-end
-
 function UI:CreateToggle(parent, text, configSection, configKey, callback)
-    local Frame = UI:Create("Frame", {Size = UDim2.new(1, -10, 0, 42), BackgroundColor3 = Color3.fromRGB(26, 27, 32), ZIndex = 4, Parent = parent})
-    Instance.new("UICorner", Frame).CornerRadius = UDim.new(0, 8)
-    UI:Create("UIStroke", {Color = Color3.fromRGB(44, 46, 54), Thickness = 1, Transparency = 0.4, Parent = Frame})
+    local Frame = UI:Create("Frame", {Size = UDim2.new(1, -10, 0, 40), BackgroundColor3 = Color3.fromRGB(22, 18, 32), ZIndex = 4, Parent = parent})
+    Instance.new("UICorner", Frame).CornerRadius = UDim.new(0, 6)
     
-    UI:Create("TextLabel", {Size = UDim2.new(0.7, 0, 1, 0), Position = UDim2.new(0, 14, 0, 0), BackgroundTransparency = 1, Text = text, TextColor3 = Color3.fromRGB(225, 226, 232), Font = Enum.Font.Gotham, TextSize = 13, TextXAlignment = Enum.TextXAlignment.Left, ZIndex = 5, Parent = Frame})
+    UI:Create("TextLabel", {Size = UDim2.new(0.6, 0, 1, 0), Position = UDim2.new(0, 10, 0, 0), BackgroundTransparency = 1, Text = text, TextColor3 = Color3.new(1,1,1), Font = Enum.Font.Gotham, TextSize = 13, TextXAlignment = Enum.TextXAlignment.Left, ZIndex = 5, Parent = Frame})
     
-    local state = Config[configSection][configKey]
-
-    -- Switch track
-    local Track = UI:Create("TextButton", {
-        Size = UDim2.new(0, 44, 0, 22), Position = UDim2.new(1, -56, 0.5, -11),
-        BackgroundColor3 = state and Config.Visuals.Accent or Color3.fromRGB(50, 52, 60),
-        Text = "", AutoButtonColor = false, ZIndex = 5, Parent = Frame
+    local Indicator = UI:Create("TextButton", {
+        Size = UDim2.new(0, 70, 0, 24), Position = UDim2.new(1, -80, 0.5, -12),
+        BackgroundColor3 = Config[configSection][configKey] and Config.Visuals.Accent or Color3.fromRGB(45, 35, 60),
+        Text = Config[configSection][configKey] and "[ ON ]" or "[ OFF ]",
+        TextColor3 = Color3.new(1,1,1), Font = Enum.Font.GothamBold, TextSize = 11, ZIndex = 5, Parent = Frame
     })
-    Instance.new("UICorner", Track).CornerRadius = UDim.new(1, 0)
-
-    -- Knob
-    local Knob = UI:Create("Frame", {
-        Size = UDim2.new(0, 16, 0, 16),
-        Position = state and UDim2.new(1, -20, 0.5, -8) or UDim2.new(0, 4, 0.5, -8),
-        BackgroundColor3 = Color3.new(1, 1, 1),
-        ZIndex = 6, Parent = Track
-    })
-    Instance.new("UICorner", Knob).CornerRadius = UDim.new(1, 0)
+    Instance.new("UICorner", Indicator).CornerRadius = UDim.new(0, 6)
     
-    -- Store indicator reference for keybind updates
-    local key = configSection .. "." .. configKey
-    ToggleIndicators[key] = {track = Track, knob = Knob}
-    RegisterAccent(function(c)
-        if Config[configSection][configKey] then Track.BackgroundColor3 = c end
-    end)
-    
-    Track.MouseButton1Click:Connect(function()
+    Indicator.MouseButton1Click:Connect(function()
         if not UI.Active then return end
-        local newState = not Config[configSection][configKey]
-        Config[configSection][configKey] = newState
-        SetSwitchVisual(Track, Knob, newState)
-        if callback then callback(newState) end
+        local state = not Config[configSection][configKey]
+        Config[configSection][configKey] = state
+        Indicator.BackgroundColor3 = state and Config.Visuals.Accent or Color3.fromRGB(45, 35, 60)
+        Indicator.Text = state and "[ ON ]" or "[ OFF ]"
+        if callback then callback(state) end
     end)
-end
-
--- Helper function to update toggle indicators from keybinds
-function UI:UpdateToggle(configSection, configKey, state)
-    local key = configSection .. "." .. configKey
-    local ind = ToggleIndicators[key]
-    if ind and ind.track and ind.knob then
-        SetSwitchVisual(ind.track, ind.knob, state)
-    end
 end
 
 function UI:CreateSlider(parent, text, min, max, configSection, configKey, callback)
-    local Frame = UI:Create("Frame", {Size = UDim2.new(1, -10, 0, 54), BackgroundColor3 = Color3.fromRGB(26, 27, 32), ZIndex = 4, Parent = parent})
-    Instance.new("UICorner", Frame).CornerRadius = UDim.new(0, 8)
-    UI:Create("UIStroke", {Color = Color3.fromRGB(44, 46, 54), Thickness = 1, Transparency = 0.4, Parent = Frame})
+    local Frame = UI:Create("Frame", {Size = UDim2.new(1, -10, 0, 50), BackgroundColor3 = Color3.fromRGB(22, 18, 32), ZIndex = 4, Parent = parent})
+    Instance.new("UICorner", Frame).CornerRadius = UDim.new(0, 6)
     
-    local Label = UI:Create("TextLabel", {Size = UDim2.new(0.7, 0, 0, 25), Position = UDim2.new(0, 14, 0, 4), BackgroundTransparency = 1, Text = text, TextColor3 = Color3.fromRGB(225, 226, 232), Font = Enum.Font.Gotham, TextSize = 13, TextXAlignment = Enum.TextXAlignment.Left, ZIndex = 5, Parent = Frame})
-    local ValueLabel = UI:Create("TextLabel", {Size = UDim2.new(0, 60, 0, 25), Position = UDim2.new(1, -70, 0, 4), BackgroundTransparency = 1, Text = tostring(Config[configSection][configKey]), TextColor3 = Config.Visuals.Accent, Font = Enum.Font.GothamBold, TextSize = 13, TextXAlignment = Enum.TextXAlignment.Right, ZIndex = 5, Parent = Frame})
-    
-    local SlideBar = UI:Create("Frame", {Size = UDim2.new(1, -28, 0, 6), Position = UDim2.new(0, 14, 0, 38), BackgroundColor3 = Color3.fromRGB(46, 48, 56), ZIndex = 5, Parent = Frame})
+    local Label = UI:Create("TextLabel", {Size = UDim2.new(0.7, 0, 0, 25), Position = UDim2.new(0, 10, 0, 2), BackgroundTransparency = 1, Text = text .. ": " .. tostring(Config[configSection][configKey]), TextColor3 = Color3.new(1,1,1), Font = Enum.Font.Gotham, TextSize = 12, TextXAlignment = Enum.TextXAlignment.Left, ZIndex = 5, Parent = Frame})
+    local SlideBar = UI:Create("Frame", {Size = UDim2.new(1, -20, 0, 6), Position = UDim2.new(0, 10, 0, 34), BackgroundColor3 = Color3.fromRGB(45, 35, 60), ZIndex = 5, Parent = Frame})
     Instance.new("UICorner", SlideBar).CornerRadius = UDim.new(0, 3)
     
-    local Fill = UI:Create("Frame", {Size = UDim2.new((Config[configSection][configKey] - min)/(max - min), 0, 1, 0), BackgroundColor3 = Config.Visuals.Accent, ZIndex = 6, Parent = SlideBar})
+    local Fill = UI:Create("Frame", {Size = UDim2.new((Config[configSection][configKey] - min)/(max - min), 0, 1, 0), BackgroundColor3 = Config.Visuals.Accent, ZIndex = 5, Parent = SlideBar})
     Instance.new("UICorner", Fill).CornerRadius = UDim.new(0, 3)
-    RegisterAccent(function(c) Fill.BackgroundColor3 = c; ValueLabel.TextColor3 = c end)
-
-    -- Knob
-    local Knob = UI:Create("Frame", {
-        Size = UDim2.new(0, 14, 0, 14), AnchorPoint = Vector2.new(0.5, 0.5),
-        Position = UDim2.new(1, 0, 0.5, 0),
-        BackgroundColor3 = Color3.new(1, 1, 1), ZIndex = 7, Parent = Fill
-    })
-    Instance.new("UICorner", Knob).CornerRadius = UDim.new(1, 0)
     
-    local Trigger = UI:Create("TextButton", {Size = UDim2.new(1, 0, 3, 0), Position = UDim2.new(0, 0, -1, 0), BackgroundTransparency = 1, Text = "", ZIndex = 7, Parent = SlideBar})
+    local Trigger = UI:Create("TextButton", {Size = UDim2.new(1, 0, 1, 0), BackgroundTransparency = 1, Text = "", ZIndex = 6, Parent = SlideBar})
     
     local function update(input)
         local pos = math.clamp((input.Position.X - SlideBar.AbsolutePosition.X) / SlideBar.AbsoluteSize.X, 0, 1)
         local val = math.floor(min + (pos * (max - min)))
         Config[configSection][configKey] = val
-        ValueLabel.Text = tostring(val)
+        Label.Text = text .. ": " .. tostring(val)
         Fill.Size = UDim2.new(pos, 0, 1, 0)
         if callback then callback(val) end
     end
@@ -817,21 +543,18 @@ function UI:CreateSlider(parent, text, min, max, configSection, configKey, callb
 end
 
 function UI:CreateKeybind(parent, text, configSection, configKey)
-    local Frame = UI:Create("Frame", {Size = UDim2.new(1, -10, 0, 42), BackgroundColor3 = Color3.fromRGB(26, 27, 32), ZIndex = 4, Parent = parent})
-    Instance.new("UICorner", Frame).CornerRadius = UDim.new(0, 8)
-    UI:Create("UIStroke", {Color = Color3.fromRGB(44, 46, 54), Thickness = 1, Transparency = 0.4, Parent = Frame})
+    local Frame = UI:Create("Frame", {Size = UDim2.new(1, -10, 0, 40), BackgroundColor3 = Color3.fromRGB(22, 18, 32), ZIndex = 4, Parent = parent})
+    Instance.new("UICorner", Frame).CornerRadius = UDim.new(0, 6)
     
-    UI:Create("TextLabel", {Size = UDim2.new(0.5, 0, 1, 0), Position = UDim2.new(0, 14, 0, 0), BackgroundTransparency = 1, Text = text, TextColor3 = Color3.fromRGB(225, 226, 232), Font = Enum.Font.Gotham, TextSize = 13, TextXAlignment = Enum.TextXAlignment.Left, ZIndex = 5, Parent = Frame})
+    UI:Create("TextLabel", {Size = UDim2.new(0.5, 0, 1, 0), Position = UDim2.new(0, 10, 0, 0), BackgroundTransparency = 1, Text = text, TextColor3 = Color3.new(1,1,1), Font = Enum.Font.Gotham, TextSize = 13, TextXAlignment = Enum.TextXAlignment.Left, ZIndex = 5, Parent = Frame})
     
     local KeyButton = UI:Create("TextButton", {
-        Size = UDim2.new(0, 72, 0, 26), Position = UDim2.new(1, -84, 0.5, -13),
-        BackgroundColor3 = Color3.fromRGB(38, 40, 48),
+        Size = UDim2.new(0, 70, 0, 24), Position = UDim2.new(1, -80, 0.5, -12),
+        BackgroundColor3 = Color3.fromRGB(45, 35, 60),
         Text = Config[configSection][configKey] == "MouseButton2" and "RMB" or Config[configSection][configKey],
-        TextColor3 = Config.Visuals.Accent, Font = Enum.Font.GothamBold, TextSize = 11, AutoButtonColor = false, ZIndex = 5, Parent = Frame
+        TextColor3 = Color3.new(1,1,1), Font = Enum.Font.GothamBold, TextSize = 11, ZIndex = 5, Parent = Frame
     })
-    Instance.new("UICorner", KeyButton).CornerRadius = UDim.new(0, 7)
-    local kbStroke = UI:Create("UIStroke", {Color = Config.Visuals.Accent, Thickness = 1, Transparency = 0.6, Parent = KeyButton})
-    RegisterAccent(function(c) KeyButton.TextColor3 = c; kbStroke.Color = c end)
+    Instance.new("UICorner", KeyButton).CornerRadius = UDim.new(0, 6)
     
     local listening = false
     KeyButton.MouseButton1Click:Connect(function()
@@ -858,20 +581,18 @@ function UI:CreateKeybind(parent, text, configSection, configKey)
 end
 
 function UI:CreateSelector(parent, text, configSection, configKey, options)
-    local Frame = UI:Create("Frame", {Size = UDim2.new(1, -10, 0, 42), BackgroundColor3 = Color3.fromRGB(26, 27, 32), ZIndex = 4, Parent = parent})
-    Instance.new("UICorner", Frame).CornerRadius = UDim.new(0, 8)
-    UI:Create("UIStroke", {Color = Color3.fromRGB(44, 46, 54), Thickness = 1, Transparency = 0.4, Parent = Frame})
+    local Frame = UI:Create("Frame", {Size = UDim2.new(1, -10, 0, 40), BackgroundColor3 = Color3.fromRGB(22, 18, 32), ZIndex = 4, Parent = parent})
+    Instance.new("UICorner", Frame).CornerRadius = UDim.new(0, 6)
     
-    UI:Create("TextLabel", {Size = UDim2.new(0.5, 0, 1, 0), Position = UDim2.new(0, 14, 0, 0), BackgroundTransparency = 1, Text = text, TextColor3 = Color3.fromRGB(225, 226, 232), Font = Enum.Font.Gotham, TextSize = 13, TextXAlignment = Enum.TextXAlignment.Left, ZIndex = 5, Parent = Frame})
+    UI:Create("TextLabel", {Size = UDim2.new(0.5, 0, 1, 0), Position = UDim2.new(0, 10, 0, 0), BackgroundTransparency = 1, Text = text, TextColor3 = Color3.new(1,1,1), Font = Enum.Font.Gotham, TextSize = 13, TextXAlignment = Enum.TextXAlignment.Left, ZIndex = 5, Parent = Frame})
     
     local SelectorButton = UI:Create("TextButton", {
-        Size = UDim2.new(0, 130, 0, 26), Position = UDim2.new(1, -142, 0.5, -13),
+        Size = UDim2.new(0, 120, 0, 24), Position = UDim2.new(1, -130, 0.5, -12),
         BackgroundColor3 = Config.Visuals.Accent,
-        Text = "‹ " .. Config[configSection][configKey] .. " ›",
-        TextColor3 = Color3.new(1,1,1), Font = Enum.Font.GothamBold, TextSize = 11, AutoButtonColor = false, ZIndex = 5, Parent = Frame
+        Text = "< " .. Config[configSection][configKey] .. " >",
+        TextColor3 = Color3.new(1,1,1), Font = Enum.Font.GothamBold, TextSize = 11, ZIndex = 5, Parent = Frame
     })
-    Instance.new("UICorner", SelectorButton).CornerRadius = UDim.new(0, 7)
-    RegisterAccent(function(c) SelectorButton.BackgroundColor3 = c end)
+    Instance.new("UICorner", SelectorButton).CornerRadius = UDim.new(0, 6)
     
     SelectorButton.MouseButton1Click:Connect(function()
         if not UI.Active then return end
@@ -884,7 +605,7 @@ function UI:CreateSelector(parent, text, configSection, configKey, options)
         end
         local nextIndex = (currentIndex % #options) + 1
         Config[configSection][configKey] = options[nextIndex]
-        SelectorButton.Text = "‹ " .. options[nextIndex] .. " ›"
+        SelectorButton.Text = "< " .. options[nextIndex] .. " >"
     end)
 end
 
@@ -1069,11 +790,12 @@ UserInputService.InputBegan:Connect(function(input, gameProcessed)
         end
     end
     
-    -- Speed Hack Toggle (only works if SpeedEnabled is ON in menu)
+    -- Speed Hack Toggle (only if enabled in menu first)
     if input.KeyCode.Name == Config.Physics.SpeedKey then
         if Config.Physics.SpeedEnabled then
-            Config.Physics.SpeedActive = not Config.Physics.SpeedActive
-            UI:Notify(Config.Physics.SpeedActive and "Speed: ON" or "Speed: OFF")
+            -- Only toggle OFF if already enabled
+            Config.Physics.SpeedEnabled = false
+            UI:Notify("Speed Hack: OFF")
         end
     end
 end)
@@ -1155,107 +877,6 @@ RunService.RenderStepped:Connect(function()
         end
     end
 end)
-
--- ===== RAGEBOT SYSTEM =====
--- Aggressive aimbot: targets any player on the whole map, snaps to target, auto-fires.
--- Works best in client-sided hit detection games (e.g. Arsenal).
-local Ragebot = {}
-local lastRageShot = 0
-
-local function getRagebotPart(char)
-    return char:FindFirstChild(Config.Combat.RagebotTargetPart)
-        or char:FindFirstChild("Head")
-        or char:FindFirstChild("HumanoidRootPart")
-        or char:FindFirstChild("UpperTorso")
-        or char:FindFirstChild("Torso")
-        or char:FindFirstChildWhichIsA("BasePart")
-end
-
-local function ragebotVisible(part, character)
-    local origin = Camera.CFrame.Position
-    local params = RaycastParams.new()
-    params.FilterType = Enum.RaycastFilterType.Exclude
-    params.FilterDescendantsInstances = {LocalPlayer.Character, Camera}
-    local result = workspace:Raycast(origin, (part.Position - origin), params)
-    if not result then return true end
-    return result.Instance:IsDescendantOf(character)
-end
-
-function Ragebot:GetTarget()
-    local myChar = LocalPlayer.Character
-    local myRoot = myChar and (myChar:FindFirstChild("HumanoidRootPart") or myChar:FindFirstChild("Head"))
-    if not myRoot then return nil end
-
-    local best, bestScore
-    local mousePos = Vector2.new(Mouse.X, Mouse.Y)
-    local mode = Config.Combat.RagebotMode
-
-    for _, player in ipairs(Players:GetPlayers()) do
-        if player ~= LocalPlayer and player.Character then
-            local hum = player.Character:FindFirstChildOfClass("Humanoid")
-            local part = getRagebotPart(player.Character)
-            if hum and hum.Health > 0 and part and IsEnemy(player, Config.Combat.RagebotTeamCheck) then
-                local dist = (part.Position - myRoot.Position).Magnitude
-                if dist <= Config.Combat.RagebotMaxDistance then
-                    -- On-screen filter (only if Full Map is off)
-                    local passScreen = true
-                    if not Config.Combat.RagebotFullMap then
-                        local _, onScreen = Camera:WorldToViewportPoint(part.Position)
-                        passScreen = onScreen
-                    end
-                    -- Visible (wall) filter
-                    local passVisible = true
-                    if Config.Combat.RagebotVisibleCheck then
-                        passVisible = ragebotVisible(part, player.Character)
-                    end
-                    if passScreen and passVisible then
-                        local score
-                        if mode == "Lowest Health" then
-                            score = hum.Health
-                        elseif mode == "Crosshair" then
-                            local sp = Camera:WorldToViewportPoint(part.Position)
-                            score = (Vector2.new(sp.X, sp.Y) - mousePos).Magnitude
-                        else -- Closest
-                            score = dist
-                        end
-                        if not bestScore or score < bestScore then
-                            bestScore = score
-                            best = part
-                        end
-                    end
-                end
-            end
-        end
-    end
-    return best
-end
-
-RunService.RenderStepped:Connect(function()
-    if not UI.Active or not Config.Combat.Ragebot then return end
-    local target = Ragebot:GetTarget()
-    if not target then return end
-
-    local aimPos = target.Position
-    -- Prediction for projectile weapons
-    if Config.Combat.RagebotPrediction > 0 then
-        local vel = target.AssemblyLinearVelocity
-        aimPos = aimPos + (vel * (Config.Combat.RagebotPrediction / 100))
-    end
-
-    -- Snap camera to target (this is what registers hits in client-sided games)
-    Camera.CFrame = CFrame.new(Camera.CFrame.Position, aimPos)
-
-    -- Auto fire
-    if Config.Combat.RagebotAutoShoot then
-        local now = tick()
-        if now - lastRageShot >= Config.Combat.RagebotFireRate then
-            lastRageShot = now
-            Shoot()
-        end
-    end
-end)
-
-
 
 -- No Spread System (Client-side visual only - actual spread is server-side)
 -- This prevents visual spread by stabilizing aim
@@ -1373,15 +994,28 @@ task.spawn(function()
     end
 end)
 
+-- ESP Toggle Key (Activates main ESP features)
+UserInputService.InputBegan:Connect(function(input, gameProcessed)
+    if not UI.Active or gameProcessed then return end
+    
+    if input.KeyCode.Name == Config.Misc.ESPToggleKey then
+        -- Only toggle OFF if already enabled in menu
+        if Config.Visuals.Enabled then
+            Config.Visuals.Enabled = false
+            UI:Notify("ESP: OFF")
+        end
+    end
+end)
+
 -- NoClip Toggle Key
 UserInputService.InputBegan:Connect(function(input, gameProcessed)
     if not UI.Active or gameProcessed then return end
     
     if input.KeyCode.Name == Config.Misc.NoClipToggleKey then
-        -- Only works if NoClip system is enabled in menu
+        -- Only toggle OFF if already enabled in menu
         if Config.Physics.NoClip then
-            Config.Physics.NoClipActive = not Config.Physics.NoClipActive
-            UI:Notify(Config.Physics.NoClipActive and "NoClip: ON" or "NoClip: OFF")
+            Config.Physics.NoClip = false
+            UI:Notify("NoClip: OFF")
         end
     end
 end)
@@ -1984,7 +1618,7 @@ local function EnableFly()
     
     if FlyConnection then FlyConnection:Disconnect() end
     FlyConnection = RunService.RenderStepped:Connect(function()
-        if not Config.Physics.Fly or not Config.Physics.FlyActive or not UI.Active then
+        if not Config.Physics.Fly or not UI.Active then
             if FlyBodyVelocity then FlyBodyVelocity:Destroy() FlyBodyVelocity = nil end
             if FlyBodyGyro then FlyBodyGyro:Destroy() FlyBodyGyro = nil end
             if FlyConnection then FlyConnection:Disconnect() FlyConnection = nil end
@@ -2019,17 +1653,11 @@ end
 UserInputService.InputBegan:Connect(function(input, gameProcessed)
     if not UI.Active or gameProcessed then return end
     if input.KeyCode.Name == Config.Physics.FlyKey then
-        -- Only works if Fly system is enabled in menu
+        -- Only toggle OFF if already enabled in menu
         if Config.Physics.Fly then
-            Config.Physics.FlyActive = not Config.Physics.FlyActive
-            
-            if Config.Physics.FlyActive then
-                EnableFly()
-            else
-                DisableFly()
-            end
-            
-            UI:Notify(Config.Physics.FlyActive and "Fly: ON" or "Fly: OFF")
+            Config.Physics.Fly = false
+            DisableFly()
+            UI:Notify("Fly Mode: OFF")
         end
     end
 end)
@@ -2042,7 +1670,7 @@ RunService.Stepped:Connect(function()
     if not hum then return end
     
     -- Speed Hack using CFrame movement
-    if Config.Physics.SpeedEnabled and Config.Physics.SpeedActive and hum.MoveDirection.Magnitude > 0 then
+    if Config.Physics.SpeedEnabled and hum.MoveDirection.Magnitude > 0 then
         local rootPart = char:FindFirstChild("HumanoidRootPart")
         if rootPart then
             local moveDirection = hum.MoveDirection
@@ -2059,8 +1687,8 @@ RunService.Stepped:Connect(function()
         end
     end
     
-    -- Only apply NoClip if enabled AND active
-    if Config.Physics.NoClip and Config.Physics.NoClipActive then
+    -- Only apply NoClip if enabled
+    if Config.Physics.NoClip then
         for _, part in pairs(char:GetDescendants()) do
             if part:IsA("BasePart") then part.CanCollide = false end
         end
@@ -2095,18 +1723,6 @@ UI:CreateToggle(CombatPage, "Auto Reload", "Combat", "AutoReload")
 UI:CreateToggle(CombatPage, "Kill Aura + Auto Aim", "Combat", "KillAura")
 UI:CreateToggle(CombatPage, "Kill Aura Team Check", "Combat", "KillAuraTeamCheck")
 UI:CreateSlider(CombatPage, "Kill Aura Range", 5, 50, "Combat", "KillAuraRange")
-
--- Ragebot Controls
-UI:CreateToggle(CombatPage, "Ragebot (Enable)", "Combat", "Ragebot")
-UI:CreateSelector(CombatPage, "Ragebot Target", "Combat", "RagebotMode", {"Closest", "Lowest Health", "Crosshair"})
-UI:CreateSelector(CombatPage, "Ragebot Body Part", "Combat", "RagebotTargetPart", {"Head", "UpperTorso", "Torso", "HumanoidRootPart"})
-UI:CreateToggle(CombatPage, "Ragebot Full Map", "Combat", "RagebotFullMap")
-UI:CreateToggle(CombatPage, "Ragebot Auto Shoot", "Combat", "RagebotAutoShoot")
-UI:CreateSlider(CombatPage, "Ragebot Fire Rate (s)", 0, 1, "Combat", "RagebotFireRate")
-UI:CreateToggle(CombatPage, "Ragebot Team Check", "Combat", "RagebotTeamCheck")
-UI:CreateToggle(CombatPage, "Ragebot Visible Check (no walls)", "Combat", "RagebotVisibleCheck")
-UI:CreateSlider(CombatPage, "Ragebot Max Distance", 50, 5000, "Combat", "RagebotMaxDistance")
-UI:CreateSlider(CombatPage, "Ragebot Prediction", 0, 50, "Combat", "RagebotPrediction")
 
 -- Visual Controls
 UI:CreateToggle(VisualsPage, "Enable ESP", "Visuals", "Enabled")
@@ -2147,10 +1763,11 @@ UI:CreateToggle(MiscPage, "Anti-AFK", "Misc", "AntiAFK")
 UI:CreateToggle(MiscPage, "Fullbright", "Misc", "Fullbright")
 UI:CreateToggle(MiscPage, "FOV Changer", "Misc", "FOVChanger")
 UI:CreateSlider(MiscPage, "FOV Value", 70, 120, "Misc", "FOVValue")
+UI:CreateKeybind(MiscPage, "ESP Toggle Key", "Misc", "ESPToggleKey")
 UI:CreateKeybind(MiscPage, "NoClip Toggle Key", "Misc", "NoClipToggleKey")
 
 -- Theme Changer
-local ThemeFrame = UI:Create("Frame", {Size = UDim2.new(1, -10, 0, 70), BackgroundColor3 = Color3.fromRGB(26, 27, 32), ZIndex = 4, Parent = MiscPage})
+local ThemeFrame = UI:Create("Frame", {Size = UDim2.new(1, -10, 0, 70), BackgroundColor3 = Color3.fromRGB(22, 18, 32), ZIndex = 4, Parent = MiscPage})
 Instance.new("UICorner", ThemeFrame).CornerRadius = UDim.new(0, 6)
 
 UI:Create("TextLabel", {
@@ -2165,7 +1782,7 @@ local ThemeContainer = UI:Create("Frame", {
     BackgroundTransparency = 1, ZIndex = 5, Parent = ThemeFrame
 })
 
-local themeNames = {"Steel", "Red", "Blue", "Green", "Yellow", "Pink"}
+local themeNames = {"Purple", "Red", "Blue", "Green", "Yellow", "Pink"}
 for i, color in ipairs(Config.UI.ThemeColors) do
     local ThemeBtn = UI:Create("TextButton", {
         Size = UDim2.new(0, 70, 0, 30),
@@ -2183,14 +1800,20 @@ for i, color in ipairs(Config.UI.ThemeColors) do
     ThemeBtn.MouseButton1Click:Connect(function()
         Config.Misc.ThemeColor = i
         Config.Visuals.Accent = color
-        -- Recolor every accent element registered across the UI
-        RefreshAccent(color)
+        -- Update all UI elements with new color
+        MainStroke.Color = color
+        ProjectLabel.TextColor3 = color
+        FOVStroke.Color = color
+        if Watermark then
+            local stroke = Watermark:FindFirstChildOfClass("UIStroke")
+            if stroke then stroke.Color = color end
+        end
         UI:Notify("Theme changed to " .. themeNames[i])
     end)
 end
 
 -- Teleport to Player Section
-local TeleportFrame = UI:Create("Frame", {Size = UDim2.new(1, -10, 0, 90), BackgroundColor3 = Color3.fromRGB(26, 27, 32), ZIndex = 4, Parent = MiscPage})
+local TeleportFrame = UI:Create("Frame", {Size = UDim2.new(1, -10, 0, 90), BackgroundColor3 = Color3.fromRGB(22, 18, 32), ZIndex = 4, Parent = MiscPage})
 Instance.new("UICorner", TeleportFrame).CornerRadius = UDim.new(0, 6)
 
 UI:Create("TextLabel", {
@@ -2202,7 +1825,7 @@ UI:Create("TextLabel", {
 
 local PlayerDropdown = UI:Create("TextButton", {
     Size = UDim2.new(1, -20, 0, 30), Position = UDim2.new(0, 10, 0, 35),
-    BackgroundColor3 = Color3.fromRGB(38, 40, 48), Text = "Select Player...",
+    BackgroundColor3 = Color3.fromRGB(45, 35, 60), Text = "Select Player...",
     TextColor3 = Color3.new(1,1,1), Font = Enum.Font.Gotham, TextSize = 11, ZIndex = 5, Parent = TeleportFrame
 })
 Instance.new("UICorner", PlayerDropdown).CornerRadius = UDim.new(0, 6)
@@ -2228,7 +1851,7 @@ PlayerDropdown.MouseButton1Click:Connect(function()
     dropdownOpen = true
     DropdownList = UI:Create("ScrollingFrame", {
         Size = UDim2.new(1, -20, 0, 150), Position = UDim2.new(0, 10, 0, 70),
-        BackgroundColor3 = Color3.fromRGB(30, 31, 38), ScrollBarThickness = 4,
+        BackgroundColor3 = Color3.fromRGB(30, 25, 40), ScrollBarThickness = 4,
         CanvasSize = UDim2.new(0, 0, 0, 0), ZIndex = 10, Parent = TeleportFrame
     })
     Instance.new("UICorner", DropdownList).CornerRadius = UDim.new(0, 6)
@@ -2241,7 +1864,7 @@ PlayerDropdown.MouseButton1Click:Connect(function()
     for _, player in pairs(Players:GetPlayers()) do
         if player ~= LocalPlayer then
             local btn = UI:Create("TextButton", {
-                Size = UDim2.new(1, -5, 0, 25), BackgroundColor3 = Color3.fromRGB(38, 40, 48),
+                Size = UDim2.new(1, -5, 0, 25), BackgroundColor3 = Color3.fromRGB(45, 35, 60),
                 Text = player.DisplayName, TextColor3 = Color3.new(1,1,1),
                 Font = Enum.Font.Gotham, TextSize = 10, ZIndex = 11, Parent = DropdownList
             })
@@ -2275,7 +1898,7 @@ TeleportBtn.MouseButton1Click:Connect(function()
 end)
 
 -- Exit Cheat Button
-local ExitFrame = UI:Create("Frame", {Size = UDim2.new(1, -10, 0, 60), BackgroundColor3 = Color3.fromRGB(26, 27, 32), ZIndex = 4, Parent = MiscPage})
+local ExitFrame = UI:Create("Frame", {Size = UDim2.new(1, -10, 0, 60), BackgroundColor3 = Color3.fromRGB(22, 18, 32), ZIndex = 4, Parent = MiscPage})
 Instance.new("UICorner", ExitFrame).CornerRadius = UDim.new(0, 6)
 UI:Create("UIStroke", {Color = Color3.fromRGB(231, 76, 60), Thickness = 2, Parent = ExitFrame})
 
@@ -2307,7 +1930,6 @@ ExitCheatBtn.MouseButton1Click:Connect(function()
     Config.Physics.JumpEnabled = false
     Config.Combat.SilentAim = false
     Config.Combat.LockedTarget = nil
-    Config.Combat.Ragebot = false
     Config.Visuals.Enabled = false
     
     -- Disable fly mode
@@ -2358,53 +1980,14 @@ ExitCheatBtn.MouseButton1Click:Connect(function()
     end
     SkeletonConnections = {}
     
-    -- Clean up ALL BillboardGui (Health Bars, Name Tags, etc.)
-    for _, player in pairs(Players:GetPlayers()) do
-        if player.Character then
-            for _, part in pairs(player.Character:GetDescendants()) do
-                if part:IsA("BillboardGui") then
-                    pcall(function() part:Destroy() end)
-                end
-            end
-        end
-    end
-    
-    -- Clean up Head Dots (any BillboardGui in Workspace)
-    for _, descendant in pairs(Workspace:GetDescendants()) do
-        if descendant:IsA("BillboardGui") and descendant.Name:find("Beep") then
-            pcall(function() descendant:Destroy() end)
-        end
-    end
-    
-    -- Clean up any FOV Circle
-    if FOVContainer then
-        pcall(function() FOVContainer:Destroy() end)
-        FOVContainer = nil
-    end
-    if FOVStroke then
-        pcall(function() FOVStroke:Destroy() end)
-        FOVStroke = nil
-    end
-    
     -- Destroy the UI completely
     UI.Screen:Destroy()
-    
-    -- Clear Watermark
-    if Watermark then
-        pcall(function() Watermark:Destroy() end)
-        Watermark = nil
-    end
     
     -- Clear global variables
     UI = nil
     Config = nil
     Combat = nil
     Visuals = nil
-    ESPObjects = nil
-    TracerConnections = nil
-    BoxConnections = nil
-    SkeletonConnections = nil
-    ToggleIndicators = nil
     
     print("[Beep] Cheat exited successfully. No trace left.")
 end)

@@ -1,5 +1,31 @@
 # Beep Framework - Changelog
 
+## Version 3.4.0 (2026-06-22) - RAGEBOT
+
+### 🎯 NUEVO: RAGEBOT (aimbot agresivo)
+Apunta a CUALQUIER jugador del mapa entero, snap a la cabeza y auto-fire.
+Funciona mejor en juegos con hit detection del lado del cliente (ej. Arsenal).
+
+**Opciones:**
+- **Ragebot (Enable)** - activa/desactiva el sistema
+- **Ragebot Target** - selector de prioridad: Closest / Lowest Health / Crosshair
+- **Ragebot Body Part** - Head / UpperTorso / Torso / HumanoidRootPart
+- **Ragebot Full Map** - apunta a todo el mapa (ON) o solo a quien está en pantalla (OFF)
+- **Ragebot Auto Shoot** - dispara solo al tener objetivo
+- **Ragebot Fire Rate (s)** - velocidad de disparo (0 = máxima)
+- **Ragebot Team Check** - no apuntar a tu equipo
+- **Ragebot Visible Check** - solo apuntar a quien puedes ver (sin paredes)
+- **Ragebot Max Distance** - rango máximo (50-5000)
+- **Ragebot Prediction** - adelanta el aim para armas con proyectil lento (0-50)
+
+### ⚠️ NOTA TÉCNICA
+- El ragebot apunta y dispara perfecto (client-side).
+- El kill lo valida el SERVIDOR del juego. En juegos con hit detection client-side (Arsenal) = muy efectivo. En juegos con anti-cheat server-side = apunta bien pero el kill no está garantizado.
+- Reutiliza las funciones existentes IsEnemy() y Shoot().
+- Se apaga automáticamente al usar Exit Cheat.
+
+---
+
 ## Version 3.3.2 (2026-06-22) - FULL THEME ACCENT SYNC
 
 ### 🎨 EL TEMA AHORA CAMBIA TODOS LOS ACENTOS

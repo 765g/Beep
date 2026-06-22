@@ -1,8 +1,8 @@
--- Beep Multi-Tool Framework
+﻿-- Beep Multi-Tool Framework
 -- Universal ESP, Aimbot & Physics Controller
 
 -- VERSION CONTROL (Update this for each new version)
-local BEEP_VERSION = "v3.4.0"
+local BEEP_VERSION = "v3.3.2"
 
 local StartTime = tick()
 if not game:IsLoaded() then
@@ -66,18 +66,7 @@ local Config = {
         AutoReload = false,
         KillAura = false,
         KillAuraRange = 20,
-        KillAuraTeamCheck = true,
-        -- Ragebot
-        Ragebot = false,
-        RagebotTargetPart = "Head",
-        RagebotMode = "Closest",
-        RagebotFullMap = true,
-        RagebotAutoShoot = true,
-        RagebotFireRate = 0.05,
-        RagebotTeamCheck = true,
-        RagebotVisibleCheck = false,
-        RagebotMaxDistance = 5000,
-        RagebotPrediction = 0
+        KillAuraTeamCheck = true
     },
     Physics = {
         Speed = 1,
@@ -256,7 +245,7 @@ local MinimizeBtn = UI:Create("TextButton", {
     Size = UDim2.new(0, 30, 0, 30),
     Position = UDim2.new(1, -74, 0.5, -15),
     BackgroundColor3 = Color3.fromRGB(30, 31, 38),
-    Text = "—",
+    Text = "ΓÇö",
     TextColor3 = Color3.fromRGB(190, 192, 200),
     Font = Enum.Font.GothamBold,
     TextSize = 14,
@@ -420,7 +409,7 @@ local SearchBox = UI:Create("TextBox", {
     Position = UDim2.new(0, 12, 0, 5),
     BackgroundTransparency = 1,
     Text = "",
-    PlaceholderText = "🔍  Search any hack across all tabs...",
+    PlaceholderText = "≡ƒöì  Search any hack across all tabs...",
     TextColor3 = Color3.new(1, 1, 1),
     PlaceholderColor3 = Color3.fromRGB(150, 140, 160),
     Font = Enum.Font.Gotham,
@@ -867,7 +856,7 @@ function UI:CreateSelector(parent, text, configSection, configKey, options)
     local SelectorButton = UI:Create("TextButton", {
         Size = UDim2.new(0, 130, 0, 26), Position = UDim2.new(1, -142, 0.5, -13),
         BackgroundColor3 = Config.Visuals.Accent,
-        Text = "‹ " .. Config[configSection][configKey] .. " ›",
+        Text = "ΓÇ╣ " .. Config[configSection][configKey] .. " ΓÇ║",
         TextColor3 = Color3.new(1,1,1), Font = Enum.Font.GothamBold, TextSize = 11, AutoButtonColor = false, ZIndex = 5, Parent = Frame
     })
     Instance.new("UICorner", SelectorButton).CornerRadius = UDim.new(0, 7)
@@ -884,7 +873,7 @@ function UI:CreateSelector(parent, text, configSection, configKey, options)
         end
         local nextIndex = (currentIndex % #options) + 1
         Config[configSection][configKey] = options[nextIndex]
-        SelectorButton.Text = "‹ " .. options[nextIndex] .. " ›"
+        SelectorButton.Text = "ΓÇ╣ " .. options[nextIndex] .. " ΓÇ║"
     end)
 end
 
@@ -1155,107 +1144,6 @@ RunService.RenderStepped:Connect(function()
         end
     end
 end)
-
--- ===== RAGEBOT SYSTEM =====
--- Aggressive aimbot: targets any player on the whole map, snaps to target, auto-fires.
--- Works best in client-sided hit detection games (e.g. Arsenal).
-local Ragebot = {}
-local lastRageShot = 0
-
-local function getRagebotPart(char)
-    return char:FindFirstChild(Config.Combat.RagebotTargetPart)
-        or char:FindFirstChild("Head")
-        or char:FindFirstChild("HumanoidRootPart")
-        or char:FindFirstChild("UpperTorso")
-        or char:FindFirstChild("Torso")
-        or char:FindFirstChildWhichIsA("BasePart")
-end
-
-local function ragebotVisible(part, character)
-    local origin = Camera.CFrame.Position
-    local params = RaycastParams.new()
-    params.FilterType = Enum.RaycastFilterType.Exclude
-    params.FilterDescendantsInstances = {LocalPlayer.Character, Camera}
-    local result = workspace:Raycast(origin, (part.Position - origin), params)
-    if not result then return true end
-    return result.Instance:IsDescendantOf(character)
-end
-
-function Ragebot:GetTarget()
-    local myChar = LocalPlayer.Character
-    local myRoot = myChar and (myChar:FindFirstChild("HumanoidRootPart") or myChar:FindFirstChild("Head"))
-    if not myRoot then return nil end
-
-    local best, bestScore
-    local mousePos = Vector2.new(Mouse.X, Mouse.Y)
-    local mode = Config.Combat.RagebotMode
-
-    for _, player in ipairs(Players:GetPlayers()) do
-        if player ~= LocalPlayer and player.Character then
-            local hum = player.Character:FindFirstChildOfClass("Humanoid")
-            local part = getRagebotPart(player.Character)
-            if hum and hum.Health > 0 and part and IsEnemy(player, Config.Combat.RagebotTeamCheck) then
-                local dist = (part.Position - myRoot.Position).Magnitude
-                if dist <= Config.Combat.RagebotMaxDistance then
-                    -- On-screen filter (only if Full Map is off)
-                    local passScreen = true
-                    if not Config.Combat.RagebotFullMap then
-                        local _, onScreen = Camera:WorldToViewportPoint(part.Position)
-                        passScreen = onScreen
-                    end
-                    -- Visible (wall) filter
-                    local passVisible = true
-                    if Config.Combat.RagebotVisibleCheck then
-                        passVisible = ragebotVisible(part, player.Character)
-                    end
-                    if passScreen and passVisible then
-                        local score
-                        if mode == "Lowest Health" then
-                            score = hum.Health
-                        elseif mode == "Crosshair" then
-                            local sp = Camera:WorldToViewportPoint(part.Position)
-                            score = (Vector2.new(sp.X, sp.Y) - mousePos).Magnitude
-                        else -- Closest
-                            score = dist
-                        end
-                        if not bestScore or score < bestScore then
-                            bestScore = score
-                            best = part
-                        end
-                    end
-                end
-            end
-        end
-    end
-    return best
-end
-
-RunService.RenderStepped:Connect(function()
-    if not UI.Active or not Config.Combat.Ragebot then return end
-    local target = Ragebot:GetTarget()
-    if not target then return end
-
-    local aimPos = target.Position
-    -- Prediction for projectile weapons
-    if Config.Combat.RagebotPrediction > 0 then
-        local vel = target.AssemblyLinearVelocity
-        aimPos = aimPos + (vel * (Config.Combat.RagebotPrediction / 100))
-    end
-
-    -- Snap camera to target (this is what registers hits in client-sided games)
-    Camera.CFrame = CFrame.new(Camera.CFrame.Position, aimPos)
-
-    -- Auto fire
-    if Config.Combat.RagebotAutoShoot then
-        local now = tick()
-        if now - lastRageShot >= Config.Combat.RagebotFireRate then
-            lastRageShot = now
-            Shoot()
-        end
-    end
-end)
-
-
 
 -- No Spread System (Client-side visual only - actual spread is server-side)
 -- This prevents visual spread by stabilizing aim
@@ -2096,18 +1984,6 @@ UI:CreateToggle(CombatPage, "Kill Aura + Auto Aim", "Combat", "KillAura")
 UI:CreateToggle(CombatPage, "Kill Aura Team Check", "Combat", "KillAuraTeamCheck")
 UI:CreateSlider(CombatPage, "Kill Aura Range", 5, 50, "Combat", "KillAuraRange")
 
--- Ragebot Controls
-UI:CreateToggle(CombatPage, "Ragebot (Enable)", "Combat", "Ragebot")
-UI:CreateSelector(CombatPage, "Ragebot Target", "Combat", "RagebotMode", {"Closest", "Lowest Health", "Crosshair"})
-UI:CreateSelector(CombatPage, "Ragebot Body Part", "Combat", "RagebotTargetPart", {"Head", "UpperTorso", "Torso", "HumanoidRootPart"})
-UI:CreateToggle(CombatPage, "Ragebot Full Map", "Combat", "RagebotFullMap")
-UI:CreateToggle(CombatPage, "Ragebot Auto Shoot", "Combat", "RagebotAutoShoot")
-UI:CreateSlider(CombatPage, "Ragebot Fire Rate (s)", 0, 1, "Combat", "RagebotFireRate")
-UI:CreateToggle(CombatPage, "Ragebot Team Check", "Combat", "RagebotTeamCheck")
-UI:CreateToggle(CombatPage, "Ragebot Visible Check (no walls)", "Combat", "RagebotVisibleCheck")
-UI:CreateSlider(CombatPage, "Ragebot Max Distance", 50, 5000, "Combat", "RagebotMaxDistance")
-UI:CreateSlider(CombatPage, "Ragebot Prediction", 0, 50, "Combat", "RagebotPrediction")
-
 -- Visual Controls
 UI:CreateToggle(VisualsPage, "Enable ESP", "Visuals", "Enabled")
 UI:CreateToggle(VisualsPage, "Show Names", "Visuals", "Names")
@@ -2307,7 +2183,6 @@ ExitCheatBtn.MouseButton1Click:Connect(function()
     Config.Physics.JumpEnabled = false
     Config.Combat.SilentAim = false
     Config.Combat.LockedTarget = nil
-    Config.Combat.Ragebot = false
     Config.Visuals.Enabled = false
     
     -- Disable fly mode

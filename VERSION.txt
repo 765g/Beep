@@ -1,6 +1,27 @@
-Beep Framework v3.3.2
+Beep Framework v3.4.0
 Release Date: June 22, 2026
-Build: Stable - FULL THEME ACCENT SYNC
+Build: Stable - RAGEBOT
+
+==============================================
+v3.4.0 - RAGEBOT (aimbot agresivo)
+==============================================
+🎯 Apunta a CUALQUIER jugador del mapa entero, snap a la cabeza + auto-fire
+🎯 Mejor en juegos con hit detection client-side (ej. Arsenal)
+
+Opciones:
+- Ragebot (Enable)
+- Ragebot Target: Closest / Lowest Health / Crosshair
+- Ragebot Body Part: Head / UpperTorso / Torso / HumanoidRootPart
+- Ragebot Full Map (todo el mapa vs solo pantalla)
+- Ragebot Auto Shoot
+- Ragebot Fire Rate (s) - 0 = maxima velocidad
+- Ragebot Team Check
+- Ragebot Visible Check (sin paredes)
+- Ragebot Max Distance (50-5000)
+- Ragebot Prediction (0-50)
+
+NOTA: apunta/dispara perfecto (client-side). El kill lo valida el servidor.
+Muy efectivo en Arsenal. Se apaga con Exit Cheat.
 
 ==============================================
 v3.3.2 - CAMBIOS
