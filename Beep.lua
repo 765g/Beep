@@ -52,6 +52,7 @@ local Config = {
         FlySpeed = 50,
         FlyKey = "E",
         SpeedEnabled = false,
+        SpeedKey = "LeftControl",
         JumpEnabled = false
     }
 }
@@ -440,6 +441,8 @@ end
 -- Lock/Unlock Target System
 UserInputService.InputBegan:Connect(function(input, gameProcessed)
     if not UI.Active or gameProcessed then return end
+    
+    -- Target Lock Toggle
     if input.KeyCode.Name == Config.Combat.LockKey then
         if Config.Combat.LockedTarget then
             Config.Combat.LockedTarget = nil
@@ -453,6 +456,12 @@ UserInputService.InputBegan:Connect(function(input, gameProcessed)
                 UI:Notify("No target in FOV")
             end
         end
+    end
+    
+    -- Speed Hack Toggle
+    if input.KeyCode.Name == Config.Physics.SpeedKey then
+        Config.Physics.SpeedEnabled = not Config.Physics.SpeedEnabled
+        UI:Notify(Config.Physics.SpeedEnabled and "Speed Hack: ON" or "Speed Hack: OFF")
     end
 end)
 
@@ -684,6 +693,7 @@ UI:CreateToggle(VisualsPage, "3D Boxes / Chams", "Visuals", "Skeletons")
 -- Physics Controls
 UI:CreateToggle(PhysicsPage, "Enable Speed Hack", "Physics", "SpeedEnabled")
 UI:CreateSlider(PhysicsPage, "Speed Multiplier", 1, 5, "Physics", "Speed")
+UI:CreateKeybind(PhysicsPage, "Speed Toggle Key", "Physics", "SpeedKey")
 UI:CreateToggle(PhysicsPage, "Enable Jump Boost", "Physics", "JumpEnabled")
 UI:CreateSlider(PhysicsPage, "Jump Power", 50, 300, "Physics", "JumpPower")
 UI:CreateToggle(PhysicsPage, "NoClip", "Physics", "NoClip")
@@ -694,7 +704,7 @@ UI:CreateToggle(PhysicsPage, "Fly Mode", "Physics", "Fly", function(state)
         DisableFly()
     end
 end)
-UI:CreateSlider(PhysicsPage, "Fly Speed", 10, 200, "Physics", "FlySpeed")
+UI:CreateSlider(PhysicsPage, "Fly Speed", 10, 500, "Physics", "FlySpeed")
 UI:CreateKeybind(PhysicsPage, "Fly Toggle Key", "Physics", "FlyKey")
 
 UI:Notify("Beep loaded. Press 'Insert' to toggle menu.")
