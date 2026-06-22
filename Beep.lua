@@ -2,7 +2,7 @@
 -- Universal ESP, Aimbot & Physics Controller
 
 -- VERSION CONTROL (Update this for each new version)
-local BEEP_VERSION = "v3.6.1"
+local BEEP_VERSION = "v3.6.2"
 
 local StartTime = tick()
 if not game:IsLoaded() then
@@ -74,8 +74,8 @@ local Config = {
         Ragebot = false,
         RagebotTargetPart = "Head",
         RagebotMode = "Closest",
-        RagebotFullMap = true,
-        RagebotAutoShoot = true,
+        RagebotFullMap = false,
+        RagebotAutoShoot = false,
         RagebotFireRate = 0.05,
         RagebotTeamCheck = true,
         RagebotVisibleCheck = false,
@@ -85,10 +85,10 @@ local Config = {
         RagebotTPMode = "Teleport",
         RagebotTPSpeed = 150,
         RagebotTPOffset = 6,
-        RagebotNoClip = true,
+        RagebotNoClip = false,
         RagebotGameProfile = "Auto",
-        RagebotFaceTarget = true,
-        RagebotIgnoreImmune = true
+        RagebotFaceTarget = false,
+        RagebotIgnoreImmune = false
     },
     Physics = {
         Speed = 1,

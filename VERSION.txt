@@ -1,6 +1,65 @@
-Beep Framework v3.6.1
+Beep Framework v3.6.2
 Release Date: June 22, 2026
-Build: Stable - TARGET SWITCHER ADDED
+Build: Stable - ALL FEATURES OFF BY DEFAULT
+
+==============================================
+v3.6.2 - CLEAN STARTUP (ALL OFF BY DEFAULT)
+==============================================
+🔧 TODAS LAS FEATURES DESACTIVADAS AL INICIO
+
+**Antes (v3.6.1 y anteriores):**
+- ❌ Algunas features venían activadas (Ragebot Auto Shoot, Full Map, etc.)
+- ❌ Podías ser detectado al cargar el script
+
+**Ahora (v3.6.2):**
+- ✅ TODAS las features vienen desactivadas (OFF)
+- ✅ Solo el Watermark está activo
+- ✅ Inicio completamente limpio y seguro
+- ✅ Tú decides qué activar
+
+**Configuración inicial (todas en FALSE):**
+```lua
+Config = {
+    Visuals = {Enabled = false, ...},
+    Combat = {
+        SilentAim = false,
+        Ragebot = false,
+        RagebotAutoShoot = false,      -- OFF
+        RagebotFullMap = false,        -- OFF
+        RagebotNoClip = false,         -- OFF
+        RagebotFaceTarget = false,     -- OFF
+        RagebotIgnoreImmune = false,   -- OFF
+        Triggerbot = false,
+        AutoShoot = false,
+        ...
+    },
+    Physics = {
+        Speed = false,
+        Fly = false,
+        NoClip = false,
+        ...
+    },
+    Misc = {
+        Watermark = true,  -- SOLO ESTO ACTIVO
+        ...
+    }
+}
+```
+
+**Ventajas:**
+- ✅ Más seguro (no detectan nada al inicio)
+- ✅ Tú controlas qué usar
+- ✅ No hay sorpresas
+- ✅ Startup limpio
+
+**Al cargar Beep v3.6.2:**
+1. Carga el script
+2. Solo se muestra el watermark
+3. Presiona INSERT para abrir menu
+4. Activa lo que quieras usar
+5. Listo!
+
+---
 
 ==============================================
 v3.6.1 - TARGET SWITCHER (AIM ASSIST)
