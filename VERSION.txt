@@ -1,23 +1,19 @@
-Beep Framework v3.1.0
+Beep Framework v3.1.1
 Release Date: June 21, 2026
-Build: Stable - REFINED EDITION
+Build: Stable - OPTIMIZED EDITION
 
 Features:
-- Combat: Aim Assist, Target Selector, Hold to Aim, Auto Shoot, Triggerbot, Rapid Fire, No Recoil, No Spread, Auto Reload, Team Check
+- Combat: Aim Assist, Target Selector, Hold to Aim, Auto Shoot, Triggerbot, Rapid Fire, No Recoil, No Spread, Auto Reload, Kill Aura (MOVED), Team Check
 - Visuals: ESP with TEAM COLORS (Red=Enemy, Green=Teammate), Names, Distance, Head Dot (ALL PLAYERS), IDs, 3D Chams, Tracers, Health Bars, 2D Boxes
-- Physics: Speed Hack, Jump Boost, Infinite Jump, Click Teleport, NoClip, Fly Mode
-- Misc: Watermark (Draggable), Theme Changer, Remove Fog, Anti-AFK, Fullbright, FOV Changer, Kill Aura, Teleport
+- Physics: Speed Hack, Jump Boost, Infinite Jump (IMPROVED - NO COOLDOWN), Click Teleport, NoClip, Fly Mode
+- Misc: Watermark (Draggable), Theme Changer, Remove Fog, Anti-AFK, Fullbright, FOV Changer
 
 Performance: Ultra-optimized - Zero lag
 Compatibility: Universal (all executors & games)
-Status: ALL FEATURES 100% FUNCTIONAL + TEAM COLOR ESP
+Status: ALL FEATURES 100% FUNCTIONAL
 
-CHANGES FROM v3.0.0:
-✅ Removed Weapon ESP (cleaned from config and UI)
-✅ Removed Bunny Hop completely (code + UI)
-✅ Moved Infinite Jump from Misc to Physics tab
-✅ Head Dot now works on ALL players
-✅ ESP shows team colors: Red for enemies, Green for teammates
-✅ Tracers show team colors
-✅ 2D Boxes show team colors
-✅ 3D Chams show team colors
+CHANGES FROM v3.1.0:
+✅ Kill Aura moved from Misc tab to Combat tab
+✅ Infinite Jump IMPROVED - NO COOLDOWN (bypasses game restrictions)
+✅ Infinite Jump now uses dual method (State Change + Velocity Force)
+✅ Jump response time: 50ms (ultra-fast)

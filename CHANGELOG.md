@@ -1,5 +1,51 @@
 # Beep Framework - Changelog
 
+## Version 3.1.1 (2026-06-21) - OPTIMIZED EDITION
+
+### 🔄 REORGANIZATION
+- **Kill Aura** - Moved from Misc tab to Combat tab (better organization)
+- **Kill Aura Team Check** - Now in Combat tab
+- **Kill Aura Range** - Now in Combat tab
+
+### ⚡ IMPROVEMENTS
+- **Infinite Jump ENHANCED** - NO COOLDOWN, bypasses all game restrictions
+  - Dual method: State Change + Velocity Force
+  - Ultra-fast response time: 50ms between jumps
+  - Works even when games have jump cooldowns
+  - Force velocity upwards (50 studs/s)
+  - Ignores swimming and climbing states
+
+### 📦 UPDATED FEATURE LIST (v3.1.1)
+**Combat Tab (18 características - KILL AURA MOVED HERE):**
+✅ Aim Assist with FOV control (50-400)
+✅ Target Part Selector (Head/UpperTorso/Torso/HumanoidRootPart)
+✅ Hold to Aim (RMB toggle)
+✅ Sticky Target Lock (Q key)
+✅ Auto Shoot for Locked Targets
+✅ Triggerbot (auto-shoot on hover)
+✅ Rapid Fire with adjustable delay
+✅ No Recoil (camera stabilization)
+✅ No Spread (resets spread values)
+✅ Auto Reload (detects empty ammo)
+✅ **Kill Aura + Auto Aim (MOVED FROM MISC)**
+✅ **Kill Aura Team Check**
+✅ **Kill Aura Range (5-50)**
+✅ Team Check
+✅ Smoothness control (1-10)
+✅ FOV Circle indicator
+
+**Misc Tab (6 características - KILL AURA REMOVED):**
+✅ Watermark (draggable, shows FPS/Ping/Time)
+✅ Theme Changer (6 colors)
+✅ Remove Fog
+✅ Anti-AFK
+✅ Fullbright
+✅ FOV Changer (70-120)
+
+### 🎯 TOTAL: **41 CARACTERÍSTICAS** completamente funcionales
+
+---
+
 ## Version 3.1.0 (2026-06-21) - REFINED EDITION
 
 ### 🗑️ REMOVED FEATURES

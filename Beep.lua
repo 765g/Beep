@@ -59,7 +59,10 @@ local Config = {
         RapidFireDelay = 0.1,
         NoRecoil = false,
         NoSpread = false,
-        AutoReload = false
+        AutoReload = false,
+        KillAura = false,
+        KillAuraRange = 20,
+        KillAuraTeamCheck = true
     },
     Physics = {
         Speed = 1,
@@ -79,9 +82,6 @@ local Config = {
         InfiniteJump = false,
         FOVChanger = false,
         FOVValue = 70,
-        KillAura = false,
-        KillAuraRange = 20,
-        KillAuraTeamCheck = true,
         TeleportPlayer = nil,
         AntiAFK = false,
         RemoveFog = false,
@@ -172,7 +172,7 @@ local Watermark = UI:Create("TextLabel", {
     Position = UDim2.new(0, 10, 0, 400),
     BackgroundColor3 = Color3.fromRGB(12, 10, 18),
     BackgroundTransparency = 0.3,
-    Text = "Beep v3.1.0 | FPS: 60 | Ping: 0ms",
+    Text = "Beep v3.1.1 | FPS: 60 | Ping: 0ms",
     TextColor3 = Color3.new(1, 1, 1),
     Font = Enum.Font.GothamBold,
     TextSize = 12,
@@ -223,7 +223,7 @@ task.spawn(function()
             local fps = math.floor(1 / RunService.RenderStepped:Wait())
             local ping = math.floor(game:GetService("Stats").Network.ServerStatsItem["Data Ping"]:GetValue())
             local time = os.date("%H:%M:%S")
-            Watermark.Text = string.format("Beep v3.1.0 | FPS: %d | Ping: %dms | %s", fps, ping, time)
+            Watermark.Text = string.format("Beep v3.1.1 | FPS: %d | Ping: %dms | %s", fps, ping, time)
             Watermark.Visible = Config.Misc.Watermark
         else
             Watermark.Visible = false
@@ -1294,15 +1294,36 @@ RunService.RenderStepped:Connect(function()
     end
 end)
 
--- Infinite Jump
+-- Infinite Jump (NO COOLDOWN - Bypasses game restrictions)
 local InfiniteJumpConnection = nil
+local lastJumpTime = 0
+
 InfiniteJumpConnection = UserInputService.InputBegan:Connect(function(input, gameProcessed)
     if gameProcessed or not UI.Active then return end
     if input.KeyCode == Enum.KeyCode.Space and Config.Misc.InfiniteJump then
+        local currentTime = tick()
+        -- Ultra-fast response time (50ms minimum between jumps)
+        if currentTime - lastJumpTime < 0.05 then return end
+        lastJumpTime = currentTime
+        
         local char = LocalPlayer.Character
-        local hum = char and char:FindFirstChildOfClass("Humanoid")
-        if hum and hum:GetState() ~= Enum.HumanoidStateType.Swimming then
+        if not char then return end
+        
+        local hum = char:FindFirstChildOfClass("Humanoid")
+        if not hum then return end
+        
+        -- Method 1: Direct State Change (bypasses cooldowns)
+        if hum:GetState() ~= Enum.HumanoidStateType.Swimming and hum:GetState() ~= Enum.HumanoidStateType.Climbing then
             hum:ChangeState(Enum.HumanoidStateType.Jumping)
+        end
+        
+        -- Method 2: Force velocity upwards (bypasses jump restrictions)
+        local rootPart = char:FindFirstChild("HumanoidRootPart")
+        if rootPart then
+            task.spawn(function()
+                local velocity = rootPart.AssemblyLinearVelocity
+                rootPart.AssemblyLinearVelocity = Vector3.new(velocity.X, 50, velocity.Z)
+            end)
         end
     end
 end)
@@ -1328,7 +1349,7 @@ local killAuraShootDelay = 0.15
 
 task.spawn(function()
     while task.wait(0.1) do -- Check every 100ms instead of every frame
-        if not Config.Misc.KillAura or not UI.Active then continue end
+        if not Config.Combat.KillAura or not UI.Active then continue end
         
         local char = LocalPlayer.Character
         if not char then continue end
@@ -1337,16 +1358,16 @@ task.spawn(function()
         if not rootPart then continue end
         
         local closestEnemy = nil
-        local closestDistance = Config.Misc.KillAuraRange
+        local closestDistance = Config.Combat.KillAuraRange
         
         -- Find closest enemy in range
         for _, player in pairs(Players:GetPlayers()) do
-            if IsEnemy(player, Config.Misc.KillAuraTeamCheck) and player.Character then
+            if IsEnemy(player, Config.Combat.KillAuraTeamCheck) and player.Character then
                 local enemyRoot = player.Character:FindFirstChild("HumanoidRootPart")
                 local enemyHum = player.Character:FindFirstChildOfClass("Humanoid")
                 if enemyRoot and enemyHum and enemyHum.Health > 0 then
                     local distance = (rootPart.Position - enemyRoot.Position).Magnitude
-                    if distance <= Config.Misc.KillAuraRange and distance < closestDistance then
+                    if distance <= Config.Combat.KillAuraRange and distance < closestDistance then
                         closestEnemy = player
                         closestDistance = distance
                     end
@@ -1533,6 +1554,9 @@ UI:CreateSlider(CombatPage, "Rapid Fire Delay (s)", 0.01, 1, "Combat", "RapidFir
 UI:CreateToggle(CombatPage, "No Recoil", "Combat", "NoRecoil")
 UI:CreateToggle(CombatPage, "No Spread", "Combat", "NoSpread")
 UI:CreateToggle(CombatPage, "Auto Reload", "Combat", "AutoReload")
+UI:CreateToggle(CombatPage, "Kill Aura + Auto Aim", "Combat", "KillAura")
+UI:CreateToggle(CombatPage, "Kill Aura Team Check", "Combat", "KillAuraTeamCheck")
+UI:CreateSlider(CombatPage, "Kill Aura Range", 5, 50, "Combat", "KillAuraRange")
 
 -- Visual Controls
 UI:CreateToggle(VisualsPage, "Enable ESP", "Visuals", "Enabled")
@@ -1572,9 +1596,6 @@ UI:CreateToggle(MiscPage, "Anti-AFK", "Misc", "AntiAFK")
 UI:CreateToggle(MiscPage, "Fullbright", "Misc", "Fullbright")
 UI:CreateToggle(MiscPage, "FOV Changer", "Misc", "FOVChanger")
 UI:CreateSlider(MiscPage, "FOV Value", 70, 120, "Misc", "FOVValue")
-UI:CreateToggle(MiscPage, "Kill Aura + Auto Aim", "Misc", "KillAura")
-UI:CreateToggle(MiscPage, "Kill Aura Team Check", "Misc", "KillAuraTeamCheck")
-UI:CreateSlider(MiscPage, "Kill Aura Range", 5, 50, "Misc", "KillAuraRange")
 
 -- Theme Changer
 local ThemeFrame = UI:Create("Frame", {Size = UDim2.new(1, -10, 0, 70), BackgroundColor3 = Color3.fromRGB(22, 18, 32), ZIndex = 4, Parent = MiscPage})
