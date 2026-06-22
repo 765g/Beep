@@ -35,6 +35,7 @@ local Config = {
         Skeletons = false,
         Tracers = false,
         HealthBars = false,
+        BoxESP = false,
         Accent = Color3.fromRGB(140, 80, 255)
     },
     Combat = {
@@ -44,7 +45,9 @@ local Config = {
         TargetPart = "Head",
         ShowFOV = true,
         LockKey = "Q",
-        LockedTarget = nil
+        LockedTarget = nil,
+        Triggerbot = false,
+        TriggerDelay = 0.1
     },
     Physics = {
         Speed = 1,
@@ -64,7 +67,8 @@ local Config = {
         FOVValue = 70,
         KillAura = false,
         KillAuraRange = 20,
-        TeleportPlayer = nil
+        TeleportPlayer = nil,
+        AntiAFK = false
     }
 }
 
@@ -171,6 +175,17 @@ CloseMenuBtn.MouseButton1Click:Connect(function()
         end
     end
     TracerConnections = {}
+    
+    -- Clean up box ESP
+    for _, data in pairs(BoxConnections) do
+        if data.box then
+            pcall(function() data.box:Remove() end)
+        end
+        if data.connection then
+            data.connection:Disconnect()
+        end
+    end
+    BoxConnections = {}
     
     UI.Screen:Destroy()
 end)
@@ -515,6 +530,54 @@ RunService.RenderStepped:Connect(function()
     end
 end)
 
+-- Triggerbot System
+local lastTriggerTime = 0
+
+RunService.RenderStepped:Connect(function()
+    if not UI.Active or not Config.Combat.Triggerbot then return end
+    
+    local currentTime = tick()
+    if currentTime - lastTriggerTime < Config.Combat.TriggerDelay then return end
+    
+    local char = LocalPlayer.Character
+    if not char then return end
+    
+    -- Check if mouse is hovering over an enemy
+    local mouseTarget = Mouse.Target
+    if mouseTarget then
+        local targetPlayer = nil
+        local targetChar = mouseTarget:FindFirstAncestorOfClass("Model")
+        
+        if targetChar then
+            targetPlayer = Players:GetPlayerFromCharacter(targetChar)
+        end
+        
+        if targetPlayer and targetPlayer ~= LocalPlayer then
+            -- Check if it's an enemy
+            if LocalPlayer.Team and targetPlayer.Team then
+                if LocalPlayer.Team == targetPlayer.Team then
+                    return -- Same team, don't shoot
+                end
+            end
+            
+            -- Check if player is alive
+            local hum = targetChar:FindFirstChildOfClass("Humanoid")
+            if hum and hum.Health > 0 then
+                -- Shoot
+                local tool = char:FindFirstChildOfClass("Tool")
+                if tool then
+                    task.spawn(function()
+                        mouse1press()
+                        task.wait(0.05)
+                        mouse1release()
+                    end)
+                    lastTriggerTime = currentTime
+                end
+            end
+        end
+    end
+end)
+
 -- ESP System
 local Visuals = {}
 local ESPObjects = {} -- Track all ESP objects for cleanup
@@ -686,6 +749,66 @@ end
 for _, p in pairs(Players:GetPlayers()) do CreateHealthBar(p) end
 Players.PlayerAdded:Connect(function(p) CreateHealthBar(p) end)
 
+-- Box ESP 2D System
+local BoxConnections = {}
+
+local function CreateBox2D(player)
+    if player == LocalPlayer then return end
+    
+    local function setupBox(char)
+        local rootPart = char:WaitForChild("HumanoidRootPart", 5)
+        if not rootPart then return end
+        
+        local box = Drawing.new("Square")
+        box.Visible = false
+        box.Color = Color3.new(Config.Visuals.Accent.R, Config.Visuals.Accent.G, Config.Visuals.Accent.B)
+        box.Thickness = 2
+        box.Transparency = 1
+        box.Filled = false
+        
+        local connection = RunService.RenderStepped:Connect(function()
+            if not UI.Active or not char:IsDescendantOf(Workspace) or not rootPart.Parent then
+                box:Remove()
+                connection:Disconnect()
+                return
+            end
+            
+            if Config.Visuals.BoxESP then
+                local hrp = char:FindFirstChild("HumanoidRootPart")
+                local head = char:FindFirstChild("Head")
+                if hrp and head then
+                    local rootPos, rootVis = Camera:WorldToViewportPoint(hrp.Position)
+                    local headPos = Camera:WorldToViewportPoint(head.Position + Vector3.new(0, 0.5, 0))
+                    local legPos = Camera:WorldToViewportPoint(hrp.Position - Vector3.new(0, 3, 0))
+                    
+                    if rootVis then
+                        local height = math.abs(headPos.Y - legPos.Y)
+                        local width = height / 2
+                        
+                        box.Size = Vector2.new(width, height)
+                        box.Position = Vector2.new(rootPos.X - width / 2, headPos.Y)
+                        box.Visible = true
+                    else
+                        box.Visible = false
+                    end
+                else
+                    box.Visible = false
+                end
+            else
+                box.Visible = false
+            end
+        end)
+        
+        table.insert(BoxConnections, {box = box, connection = connection})
+    end
+    
+    if player.Character then task.spawn(function() setupBox(player.Character) end) end
+    player.CharacterAdded:Connect(function(char) task.spawn(function() setupBox(char) end) end)
+end
+
+for _, p in pairs(Players:GetPlayers()) do CreateBox2D(p) end
+Players.PlayerAdded:Connect(function(p) CreateBox2D(p) end)
+
 -- Fullbright System
 local Lighting = game:GetService("Lighting")
 local originalLighting = {
@@ -795,6 +918,36 @@ RunService.Heartbeat:Connect(function()
                         mouse1release()
                     end)
                 end
+            end
+        end
+    end
+end)
+
+-- Anti-AFK System
+local afkTime = 0
+local afkConnection = nil
+
+afkConnection = RunService.Heartbeat:Connect(function()
+    if not UI.Active or not Config.Misc.AntiAFK then return end
+    
+    afkTime = afkTime + 1
+    
+    -- Every 300 seconds (5 minutes), perform random action
+    if afkTime >= 300 * 60 then -- 60 = approx heartbeat per second
+        afkTime = 0
+        
+        local char = LocalPlayer.Character
+        local hum = char and char:FindFirstChildOfClass("Humanoid")
+        if hum then
+            -- Random small movement
+            local randomAction = math.random(1, 3)
+            if randomAction == 1 then
+                hum:Move(Vector3.new(0.1, 0, 0))
+            elseif randomAction == 2 then
+                hum:ChangeState(Enum.HumanoidStateType.Jumping)
+            else
+                -- Just move camera slightly
+                Camera.CFrame = Camera.CFrame * CFrame.Angles(0, math.rad(0.1), 0)
             end
         end
     end
@@ -917,6 +1070,8 @@ UI:CreateSlider(CombatPage, "FOV Radius", 50, 400, "Combat", "FOV")
 UI:CreateSlider(CombatPage, "Smoothness", 1, 10, "Combat", "Smoothness")
 UI:CreateToggle(CombatPage, "Show FOV Circle", "Combat", "ShowFOV")
 UI:CreateKeybind(CombatPage, "Lock/Unlock Target", "Combat", "LockKey")
+UI:CreateToggle(CombatPage, "Triggerbot", "Combat", "Triggerbot")
+UI:CreateSlider(CombatPage, "Trigger Delay (s)", 0, 1, "Combat", "TriggerDelay")
 
 -- Visual Controls
 UI:CreateToggle(VisualsPage, "Enable ESP", "Visuals", "Enabled")
@@ -925,6 +1080,7 @@ UI:CreateToggle(VisualsPage, "Show IDs", "Visuals", "IDs")
 UI:CreateToggle(VisualsPage, "3D Boxes / Chams", "Visuals", "Skeletons")
 UI:CreateToggle(VisualsPage, "Tracers", "Visuals", "Tracers")
 UI:CreateToggle(VisualsPage, "Health Bars", "Visuals", "HealthBars")
+UI:CreateToggle(VisualsPage, "2D Box ESP", "Visuals", "BoxESP")
 
 -- Physics Controls
 UI:CreateToggle(PhysicsPage, "Enable Speed Hack", "Physics", "SpeedEnabled")
@@ -944,6 +1100,7 @@ UI:CreateSlider(PhysicsPage, "Fly Speed", 10, 500, "Physics", "FlySpeed")
 UI:CreateKeybind(PhysicsPage, "Fly Toggle Key", "Physics", "FlyKey")
 
 -- Misc Controls
+UI:CreateToggle(MiscPage, "Anti-AFK", "Misc", "AntiAFK")
 UI:CreateToggle(MiscPage, "Fullbright", "Misc", "Fullbright")
 UI:CreateToggle(MiscPage, "Infinite Jump", "Misc", "InfiniteJump")
 UI:CreateToggle(MiscPage, "FOV Changer", "Misc", "FOVChanger")
