@@ -479,7 +479,7 @@ function Combat:IsTargetValid(target)
     return distance <= Config.Combat.FOV
 end
 
--- Universal Shooting Function
+-- Universal Shooting Function (Optimized for Xeno and other executors)
 local function Shoot()
     local char = LocalPlayer.Character
     if not char then return end
@@ -488,31 +488,48 @@ local function Shoot()
     local tool = char:FindFirstChildOfClass("Tool")
     if tool then
         tool:Activate()
+        task.wait(0.01)
     end
     
-    -- Method 2: Mouse click simulation (for executors with mouse functions)
-    if mouse1press and mouse1release then
-        task.spawn(function()
-            mouse1press()
-            task.wait(0.05)
-            mouse1release()
-        end)
-    end
+    -- Method 2: UserInputService click simulation (Xeno-compatible)
+    pcall(function()
+        local UIS = game:GetService("UserInputService")
+        UIS:GetMouseButtonDown(Enum.UserInputType.MouseButton1)
+    end)
     
     -- Method 3: VirtualInputManager (alternative method)
     pcall(function()
         local VIM = game:GetService("VirtualInputManager")
-        VIM:SendMouseButtonEvent(0, 0, 0, true, game, 1)
+        VIM:SendMouseButtonEvent(Mouse.X, Mouse.Y, 0, true, game, 1)
         task.wait(0.05)
-        VIM:SendMouseButtonEvent(0, 0, 0, false, game, 1)
+        VIM:SendMouseButtonEvent(Mouse.X, Mouse.Y, 0, false, game, 1)
     end)
     
-    -- Method 4: Remote event firing (game-specific, won't break if not present)
+    -- Method 4: Mouse1Click direct (for Xeno)
     pcall(function()
-        local remotes = char:GetDescendants()
-        for _, remote in pairs(remotes) do
-            if remote:IsA("RemoteEvent") and (remote.Name:lower():find("shoot") or remote.Name:lower():find("fire") or remote.Name:lower():find("attack")) then
-                remote:FireServer()
+        if mousemouseclick then
+            mousemouseclick()
+        elseif mouse1click then
+            mouse1click()
+        end
+    end)
+    
+    -- Method 5: Input object creation (Xeno-friendly)
+    pcall(function()
+        game:GetService("VirtualUser"):Button1Down(Vector2.new(Mouse.X, Mouse.Y))
+        task.wait(0.05)
+        game:GetService("VirtualUser"):Button1Up(Vector2.new(Mouse.X, Mouse.Y))
+    end)
+    
+    -- Method 6: Remote event firing (game-specific)
+    pcall(function()
+        for _, descendant in pairs(game:GetDescendants()) do
+            if descendant:IsA("RemoteEvent") then
+                local name = descendant.Name:lower()
+                if name:find("shoot") or name:find("fire") or name:find("attack") or name:find("damage") then
+                    descendant:FireServer()
+                    break
+                end
             end
         end
     end)
