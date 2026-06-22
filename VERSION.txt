@@ -1,13 +1,23 @@
-Beep Framework v3.0.0
+Beep Framework v3.1.0
 Release Date: June 21, 2026
-Build: Stable - COMPLETE
+Build: Stable - REFINED EDITION
 
 Features:
 - Combat: Aim Assist, Target Selector, Hold to Aim, Auto Shoot, Triggerbot, Rapid Fire, No Recoil, No Spread, Auto Reload, Team Check
-- Visuals: ESP, Names, Distance, Weapon ESP (NEW), Head Dot (NEW), IDs, 3D Chams, Tracers, Health Bars, 2D Boxes
-- Physics: Speed Hack, Jump Boost, Bunny Hop (FIXED), Click Teleport, NoClip, Fly Mode
-- Misc: Watermark (Draggable), Theme Changer, Remove Fog, Anti-AFK, Fullbright, Infinite Jump, FOV Changer, Kill Aura, Teleport
+- Visuals: ESP with TEAM COLORS (Red=Enemy, Green=Teammate), Names, Distance, Head Dot (ALL PLAYERS), IDs, 3D Chams, Tracers, Health Bars, 2D Boxes
+- Physics: Speed Hack, Jump Boost, Infinite Jump, Click Teleport, NoClip, Fly Mode
+- Misc: Watermark (Draggable), Theme Changer, Remove Fog, Anti-AFK, Fullbright, FOV Changer, Kill Aura, Teleport
 
 Performance: Ultra-optimized - Zero lag
 Compatibility: Universal (all executors & games)
-Status: ALL FEATURES 100% FUNCTIONAL
+Status: ALL FEATURES 100% FUNCTIONAL + TEAM COLOR ESP
+
+CHANGES FROM v3.0.0:
+✅ Removed Weapon ESP (cleaned from config and UI)
+✅ Removed Bunny Hop completely (code + UI)
+✅ Moved Infinite Jump from Misc to Physics tab
+✅ Head Dot now works on ALL players
+✅ ESP shows team colors: Red for enemies, Green for teammates
+✅ Tracers show team colors
+✅ 2D Boxes show team colors
+✅ 3D Chams show team colors

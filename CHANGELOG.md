@@ -1,5 +1,75 @@
 # Beep Framework - Changelog
 
+## Version 3.1.0 (2026-06-21) - REFINED EDITION
+
+### 🗑️ REMOVED FEATURES
+- **Weapon ESP** - Completely removed from config and UI (Visual tab)
+- **Bunny Hop** - Completely removed from code and UI (Physics tab)
+
+### 🔄 REORGANIZATION
+- **Infinite Jump** - Moved from Misc tab to Physics tab (replaced Bunny Hop position)
+
+### ✅ FIXES & IMPROVEMENTS
+- **Head Dot** - Now works on ALL players, not just some
+- **ESP Team Colors** - All ESP features now show team colors:
+  - **Red** for enemies
+  - **Green** for teammates
+  - Applies to: Names, 3D Chams, Tracers, 2D Boxes
+- **Team Detection** - Universal system works in any Roblox game
+
+### 📦 FINAL FEATURE LIST (v3.1.0)
+**Combat Tab:**
+✅ Aim Assist with FOV control (50-400)
+✅ Target Part Selector (Head/UpperTorso/Torso/HumanoidRootPart)
+✅ Hold to Aim (RMB toggle)
+✅ Sticky Target Lock (Q key)
+✅ Auto Shoot for Locked Targets
+✅ Triggerbot (auto-shoot on hover)
+✅ Rapid Fire with adjustable delay
+✅ No Recoil (camera stabilization)
+✅ No Spread (resets spread values)
+✅ Auto Reload (detects empty ammo)
+✅ Team Check
+✅ Smoothness control (1-10)
+✅ FOV Circle indicator
+
+**Visual Tab:**
+✅ Enable ESP master toggle
+✅ Show Names with distance [XXm]
+✅ Show IDs (Player UserID)
+✅ Head Dot (red circle on heads - ALL PLAYERS)
+✅ 3D Boxes/Chams (team colored)
+✅ Tracers (team colored)
+✅ Health Bars (dynamic color)
+✅ 2D Box ESP (team colored)
+
+**Physics Tab:**
+✅ Speed Hack (1-5x multiplier with toggle key)
+✅ Jump Boost (50-300 power)
+✅ Infinite Jump (MOVED FROM MISC)
+✅ Click Teleport (CTRL+Click)
+✅ NoClip
+✅ Fly Mode (WASD controls, 10-500 speed)
+
+**Misc Tab:**
+✅ Watermark (draggable, shows FPS/Ping/Time)
+✅ Theme Changer (6 colors: Purple, Red, Blue, Green, Yellow, Pink)
+✅ Remove Fog
+✅ Anti-AFK
+✅ Fullbright
+✅ FOV Changer (70-120)
+✅ Kill Aura + Auto Aim (5-50 range)
+✅ Kill Aura Team Check
+
+### 🎯 CLEAN BUILD
+- Zero lag performance
+- Universal compatibility
+- All features 100% functional
+- Cleaner UI (removed unused features)
+- Better organization (logical tab placement)
+
+---
+
 ## Version 3.0.0 (2026-06-21) - COMPLETE EDITION
 
 ### ✨ NEW FEATURES

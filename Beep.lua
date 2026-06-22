@@ -37,7 +37,6 @@ local Config = {
         Tracers = false,
         HealthBars = false,
         BoxESP = false,
-        WeaponESP = false,
         HeadDot = false,
         Accent = Color3.fromRGB(140, 80, 255)
     },
@@ -72,8 +71,6 @@ local Config = {
         SpeedEnabled = false,
         SpeedKey = "LeftControl",
         JumpEnabled = false,
-        BunnyHop = false,
-        BunnyHopKey = "Space",
         ClickTP = false,
         ClickTPKey = "LeftControl"
     },
@@ -175,7 +172,7 @@ local Watermark = UI:Create("TextLabel", {
     Position = UDim2.new(0, 10, 0, 400),
     BackgroundColor3 = Color3.fromRGB(12, 10, 18),
     BackgroundTransparency = 0.3,
-    Text = "Beep v3.0.0 | FPS: 60 | Ping: 0ms",
+    Text = "Beep v3.1.0 | FPS: 60 | Ping: 0ms",
     TextColor3 = Color3.new(1, 1, 1),
     Font = Enum.Font.GothamBold,
     TextSize = 12,
@@ -226,7 +223,7 @@ task.spawn(function()
             local fps = math.floor(1 / RunService.RenderStepped:Wait())
             local ping = math.floor(game:GetService("Stats").Network.ServerStatsItem["Data Ping"]:GetValue())
             local time = os.date("%H:%M:%S")
-            Watermark.Text = string.format("Beep v3.0.0 | FPS: %d | Ping: %dms | %s", fps, ping, time)
+            Watermark.Text = string.format("Beep v3.1.0 | FPS: %d | Ping: %dms | %s", fps, ping, time)
             Watermark.Visible = Config.Misc.Watermark
         else
             Watermark.Visible = false
@@ -990,31 +987,16 @@ function Visuals:DrawESPOnCharacter(player)
         
         table.insert(ESPObjects, bGui)
         
-        -- Weapon ESP Label
-        local weaponLabel = nil
-        if Config.Visuals.WeaponESP then
-            weaponLabel = UI:Create("TextLabel", {
-                Size = UDim2.new(1, 0, 0.5, 0), 
-                Position = UDim2.new(0, 0, 1, 0),
-                BackgroundTransparency = 1, 
-                TextColor3 = Color3.fromRGB(255, 200, 80), 
-                Font = Enum.Font.GothamBold, 
-                TextSize = 10, 
-                TextStrokeTransparency = 0.5, 
-                Text = "", 
-                Parent = bGui
-            })
-        end
-        
-        -- Head Dot
+        -- Head Dot (FIXED - Works for ALL players)
         local headDot = nil
-        if Config.Visuals.HeadDot then
-            local headPart = char:FindFirstChild("Head")
+        task.spawn(function()
+            local headPart = char:WaitForChild("Head", 10)
             if headPart then
                 headDot = UI:Create("BillboardGui", {
                     Size = UDim2.new(0, 10, 0, 10), 
                     StudsOffset = Vector3.new(0, 0, 0), 
-                    AlwaysOnTop = true, 
+                    AlwaysOnTop = true,
+                    Enabled = false,
                     Parent = headPart
                 })
                 local dot = UI:Create("Frame", {
@@ -1026,7 +1008,7 @@ function Visuals:DrawESPOnCharacter(player)
                 Instance.new("UICorner", dot).CornerRadius = UDim.new(1, 0)
                 table.insert(ESPObjects, headDot)
             end
-        end
+        end)
         
         local trackingParts = {}
         local function scanParts(rootPart)
@@ -1045,14 +1027,20 @@ function Visuals:DrawESPOnCharacter(player)
                 -- Control BillboardGui visibility
                 bGui.Enabled = visualsEnabled
                 
-                -- Update Head Dot visibility
+                -- Update Head Dot visibility (for ALL players)
                 if headDot then
                     headDot.Enabled = visualsEnabled and Config.Visuals.HeadDot
                 end
                 
+                -- Check if player is enemy for color coding
+                local isEnemy = IsEnemy(player, true) -- Always check teams
+                local espColor = isEnemy and Color3.fromRGB(255, 80, 80) or Color3.fromRGB(80, 255, 120) -- Red for enemies, Green for teammates
+                
+                -- Update 3D Chams color based on team
                 for _, box in pairs(trackingParts) do
                     if box and box.Parent then
                         box.Visible = visualsEnabled and Config.Visuals.Skeletons
+                        box.Color3 = espColor
                     end
                 end
                 
@@ -1071,15 +1059,8 @@ function Visuals:DrawESPOnCharacter(player)
                         text = text .. "\n[" .. player.UserId .. "]"
                     end
                     
-                    -- Show weapon if enabled
-                    if Config.Visuals.WeaponESP and weaponLabel then
-                        local tool = char:FindFirstChildOfClass("Tool")
-                        if tool then
-                            weaponLabel.Text = "🔫 " .. tool.Name
-                        else
-                            weaponLabel.Text = "Unarmed"
-                        end
-                    end
+                    -- Color text based on team
+                    label.TextColor3 = espColor
                     
                     if Config.Visuals.Names then 
                         label.Text = text 
@@ -1088,7 +1069,6 @@ function Visuals:DrawESPOnCharacter(player)
                     end
                 else
                     label.Text = ""
-                    if weaponLabel then weaponLabel.Text = "" end
                 end
                 task.wait(0.1)
             end
@@ -1126,6 +1106,11 @@ local function CreateTracer(player)
             end
             
             if Config.Visuals.Tracers then
+                -- Update color based on team
+                local isEnemy = IsEnemy(player, true)
+                local espColor = isEnemy and Color3.fromRGB(255, 80, 80) or Color3.fromRGB(80, 255, 120)
+                line.Color = Color3.new(espColor.R, espColor.G, espColor.B)
+                
                 local screenPos, onScreen = Camera:WorldToViewportPoint(rootPart.Position)
                 if onScreen then
                     local screenSize = Camera.ViewportSize
@@ -1224,6 +1209,11 @@ local function CreateBox2D(player)
             end
             
             if Config.Visuals.BoxESP then
+                -- Check if player is enemy for color coding
+                local isEnemy = IsEnemy(player, true) -- Always check teams
+                local boxColor = isEnemy and Color3.new(1, 0.3, 0.3) or Color3.new(0.3, 1, 0.5) -- Red for enemies, Green for teammates
+                box.Color = boxColor
+                
                 local hrp = char:FindFirstChild("HumanoidRootPart")
                 local head = char:FindFirstChild("Head")
                 if hrp and head then
@@ -1313,28 +1303,6 @@ InfiniteJumpConnection = UserInputService.InputBegan:Connect(function(input, gam
         local hum = char and char:FindFirstChildOfClass("Humanoid")
         if hum and hum:GetState() ~= Enum.HumanoidStateType.Swimming then
             hum:ChangeState(Enum.HumanoidStateType.Jumping)
-        end
-    end
-end)
-
--- Bunny Hop System
-local lastBhopTime = 0
-RunService.Heartbeat:Connect(function()
-    if not UI.Active or not Config.Physics.BunnyHop then return end
-    local char = LocalPlayer.Character
-    if not char then return end
-    local hum = char:FindFirstChildOfClass("Humanoid")
-    if not hum then return end
-    
-    -- Check if space is held
-    if UserInputService:IsKeyDown(Enum.KeyCode.Space) then
-        local currentTime = tick()
-        -- Only jump if on ground and cooldown passed
-        if hum:GetState() == Enum.HumanoidStateType.Landed or hum:GetState() == Enum.HumanoidStateType.Running then
-            if currentTime - lastBhopTime >= 0.1 then
-                hum:ChangeState(Enum.HumanoidStateType.Jumping)
-                lastBhopTime = currentTime
-            end
         end
     end
 end)
@@ -1571,7 +1539,6 @@ UI:CreateToggle(VisualsPage, "Enable ESP", "Visuals", "Enabled")
 UI:CreateToggle(VisualsPage, "Show Names", "Visuals", "Names")
 UI:CreateToggle(VisualsPage, "Show Distance", "Visuals", "Distance")
 UI:CreateToggle(VisualsPage, "Show IDs", "Visuals", "IDs")
-UI:CreateToggle(VisualsPage, "Show Weapon", "Visuals", "WeaponESP")
 UI:CreateToggle(VisualsPage, "Head Dot", "Visuals", "HeadDot")
 UI:CreateToggle(VisualsPage, "3D Boxes / Chams", "Visuals", "Skeletons")
 UI:CreateToggle(VisualsPage, "Tracers", "Visuals", "Tracers")
@@ -1584,7 +1551,7 @@ UI:CreateSlider(PhysicsPage, "Speed Multiplier", 1, 5, "Physics", "Speed")
 UI:CreateKeybind(PhysicsPage, "Speed Toggle Key", "Physics", "SpeedKey")
 UI:CreateToggle(PhysicsPage, "Enable Jump Boost", "Physics", "JumpEnabled")
 UI:CreateSlider(PhysicsPage, "Jump Power", 50, 300, "Physics", "JumpPower")
-UI:CreateToggle(PhysicsPage, "Bunny Hop", "Physics", "BunnyHop")
+UI:CreateToggle(PhysicsPage, "Infinite Jump", "Misc", "InfiniteJump")
 UI:CreateToggle(PhysicsPage, "Click Teleport", "Physics", "ClickTP")
 UI:CreateKeybind(PhysicsPage, "Click TP Key", "Physics", "ClickTPKey")
 UI:CreateToggle(PhysicsPage, "NoClip", "Physics", "NoClip")
@@ -1603,7 +1570,6 @@ UI:CreateToggle(MiscPage, "Watermark", "Misc", "Watermark")
 UI:CreateToggle(MiscPage, "Remove Fog", "Misc", "RemoveFog")
 UI:CreateToggle(MiscPage, "Anti-AFK", "Misc", "AntiAFK")
 UI:CreateToggle(MiscPage, "Fullbright", "Misc", "Fullbright")
-UI:CreateToggle(MiscPage, "Infinite Jump", "Misc", "InfiniteJump")
 UI:CreateToggle(MiscPage, "FOV Changer", "Misc", "FOVChanger")
 UI:CreateSlider(MiscPage, "FOV Value", 70, 120, "Misc", "FOVValue")
 UI:CreateToggle(MiscPage, "Kill Aura + Auto Aim", "Misc", "KillAura")
