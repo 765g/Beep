@@ -1,5 +1,44 @@
 # Beep Framework - Changelog
 
+## Version 3.2.8 (2026-06-21) - TWO-LEVEL TOGGLE SYSTEM
+
+### ✅ FIXED - Sistema de dos niveles implementado correctamente
+
+**Nivel 1: Enable en el menú** (Habilita el sistema)
+- "Enable Speed Hack" → Habilita el sistema de Speed
+- "Fly Mode" → Habilita el sistema de Fly  
+- "NoClip" → Habilita el sistema de NoClip
+
+**Nivel 2: Keybind** (Toggle temporal ON/OFF)
+- LeftControl → Toggle Speed ON/OFF (solo si SpeedEnabled está ON)
+- E → Toggle Fly ON/OFF (solo si Fly está ON en menú)
+- F2 → Toggle NoClip ON/OFF (solo si NoClip está ON en menú)
+
+### 🎯 CÓMO FUNCIONA
+
+**Ejemplo con Speed:**
+1. Abres menú → Activas "Enable Speed Hack"
+2. Sistema de Speed habilitado (pero aún no activo)
+3. Presionas LeftControl → Speed se ACTIVA
+4. Presionas LeftControl otra vez → Speed se DESACTIVA
+5. "Enable Speed Hack" sigue ON en el menú
+6. Puedes seguir usando LeftControl para prender/apagar
+7. Si desactivas "Enable Speed Hack" → LeftControl deja de funcionar
+
+### 💡 BENEFICIOS
+- ✅ Control total: Activa el sistema cuando quieras
+- ✅ Toggle rápido: Usa keybind para ON/OFF temporal
+- ✅ No interfiere con controles del juego cuando está deshabilitado
+- ✅ Conveniente: No necesitas abrir menú constantemente
+
+### 🔧 TECHNICAL CHANGES
+- Added `SpeedActive`, `FlyActive`, `NoClipActive` variables
+- Keybinds only work if main system is enabled
+- Keybinds toggle the "Active" state, not the "Enabled" state
+- "Enabled" stays ON in menu, "Active" toggles with keybind
+
+---
+
 ## Version 3.2.7 (2026-06-21) - FULL TOGGLE KEYBINDS
 
 ### ✅ FIXED - Keybinds ahora son toggles ON/OFF completos

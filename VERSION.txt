@@ -1,21 +1,22 @@
-Beep Framework v3.2.7
+Beep Framework v3.2.8
 Release Date: June 21, 2026
-Build: Stable - FULL TOGGLE KEYBINDS
+Build: Stable - TWO-LEVEL TOGGLE SYSTEM
 
-KEYBIND BEHAVIOR (FIXED):
-✅ Todos los keybinds funcionan como toggles ON/OFF completos
-✅ Presiona una vez = ON, presiona otra vez = OFF
-✅ No necesitas abrir el menú para reactivar
-✅ Los toggles en el menú se actualizan visualmente
+TWO-LEVEL SYSTEM (PERFECTO):
+🔧 Nivel 1 - Enable en menú: Habilita el sistema
+🎮 Nivel 2 - Keybind: Toggle temporal ON/OFF
+
+EJEMPLO:
+1. Activa "Enable Speed Hack" en menú → Sistema habilitado
+2. Presiona LeftControl → Speed ON
+3. Presiona LeftControl otra vez → Speed OFF
+4. "Enable Speed Hack" sigue ON, puedes seguir usando LeftControl
+5. Desactiva "Enable Speed Hack" → LeftControl deja de funcionar
 
 KEYBINDS (3 total):
-✅ E - Fly Toggle (ON/OFF completo)
-✅ LeftControl - Speed Toggle (ON/OFF completo)
-✅ F2 - NoClip Toggle (ON/OFF completo)
-
-STARTUP (CLEAN):
-- Todo OFF por defecto excepto Watermark
-- Inicio limpio y controlado
+✅ E - Fly Toggle (solo funciona si Fly enabled en menú)
+✅ LeftControl - Speed Toggle (solo funciona si SpeedEnabled en menú)
+✅ F2 - NoClip Toggle (solo funciona si NoClip enabled en menú)
 
 Features:
 - Combat: Aim Assist, Target Selector, Hold to Aim, Auto Shoot, Triggerbot, Rapid Fire, No Recoil, No Spread, Auto Reload, Kill Aura, Team Check

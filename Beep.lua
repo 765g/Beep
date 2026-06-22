@@ -2,7 +2,7 @@
 -- Universal ESP, Aimbot & Physics Controller
 
 -- VERSION CONTROL (Update this for each new version)
-local BEEP_VERSION = "v3.2.7"
+local BEEP_VERSION = "v3.2.8"
 
 local StartTime = tick()
 if not game:IsLoaded() then
@@ -76,10 +76,13 @@ local Config = {
         FlySpeed = 50,
         FlyKey = "E",
         SpeedEnabled = false,
+        SpeedActive = false,
         SpeedKey = "LeftControl",
         JumpEnabled = false,
         ClickTP = false,
-        ClickTPKey = "LeftControl"
+        ClickTPKey = "LeftControl",
+        FlyActive = false,
+        NoClipActive = false
     },
     Misc = {
         Fullbright = false,
@@ -806,12 +809,12 @@ UserInputService.InputBegan:Connect(function(input, gameProcessed)
         end
     end
     
-    -- Speed Hack Toggle (complete toggle ON/OFF)
+    -- Speed Hack Toggle (only works if SpeedEnabled is ON in menu)
     if input.KeyCode.Name == Config.Physics.SpeedKey then
-        local newState = not Config.Physics.SpeedEnabled
-        Config.Physics.SpeedEnabled = newState
-        UI:UpdateToggle("Physics", "SpeedEnabled", newState)
-        UI:Notify(newState and "Speed Hack: ON" or "Speed Hack: OFF")
+        if Config.Physics.SpeedEnabled then
+            Config.Physics.SpeedActive = not Config.Physics.SpeedActive
+            UI:Notify(Config.Physics.SpeedActive and "Speed: ON" or "Speed: OFF")
+        end
     end
 end)
 
@@ -1014,11 +1017,11 @@ UserInputService.InputBegan:Connect(function(input, gameProcessed)
     if not UI.Active or gameProcessed then return end
     
     if input.KeyCode.Name == Config.Misc.NoClipToggleKey then
-        -- Complete toggle ON/OFF
-        local newState = not Config.Physics.NoClip
-        Config.Physics.NoClip = newState
-        UI:UpdateToggle("Physics", "NoClip", newState)
-        UI:Notify(newState and "NoClip: ON" or "NoClip: OFF")
+        -- Only works if NoClip system is enabled in menu
+        if Config.Physics.NoClip then
+            Config.Physics.NoClipActive = not Config.Physics.NoClipActive
+            UI:Notify(Config.Physics.NoClipActive and "NoClip: ON" or "NoClip: OFF")
+        end
     end
 end)
 
@@ -1620,7 +1623,7 @@ local function EnableFly()
     
     if FlyConnection then FlyConnection:Disconnect() end
     FlyConnection = RunService.RenderStepped:Connect(function()
-        if not Config.Physics.Fly or not UI.Active then
+        if not Config.Physics.Fly or not Config.Physics.FlyActive or not UI.Active then
             if FlyBodyVelocity then FlyBodyVelocity:Destroy() FlyBodyVelocity = nil end
             if FlyBodyGyro then FlyBodyGyro:Destroy() FlyBodyGyro = nil end
             if FlyConnection then FlyConnection:Disconnect() FlyConnection = nil end
@@ -1655,18 +1658,18 @@ end
 UserInputService.InputBegan:Connect(function(input, gameProcessed)
     if not UI.Active or gameProcessed then return end
     if input.KeyCode.Name == Config.Physics.FlyKey then
-        -- Complete toggle ON/OFF
-        local newState = not Config.Physics.Fly
-        Config.Physics.Fly = newState
-        
-        if newState then
-            EnableFly()
-        else
-            DisableFly()
+        -- Only works if Fly system is enabled in menu
+        if Config.Physics.Fly then
+            Config.Physics.FlyActive = not Config.Physics.FlyActive
+            
+            if Config.Physics.FlyActive then
+                EnableFly()
+            else
+                DisableFly()
+            end
+            
+            UI:Notify(Config.Physics.FlyActive and "Fly: ON" or "Fly: OFF")
         end
-        
-        UI:UpdateToggle("Physics", "Fly", newState)
-        UI:Notify(newState and "Fly Mode: ON" or "Fly Mode: OFF")
     end
 end)
 
@@ -1678,7 +1681,7 @@ RunService.Stepped:Connect(function()
     if not hum then return end
     
     -- Speed Hack using CFrame movement
-    if Config.Physics.SpeedEnabled and hum.MoveDirection.Magnitude > 0 then
+    if Config.Physics.SpeedEnabled and Config.Physics.SpeedActive and hum.MoveDirection.Magnitude > 0 then
         local rootPart = char:FindFirstChild("HumanoidRootPart")
         if rootPart then
             local moveDirection = hum.MoveDirection
@@ -1695,8 +1698,8 @@ RunService.Stepped:Connect(function()
         end
     end
     
-    -- Only apply NoClip if enabled
-    if Config.Physics.NoClip then
+    -- Only apply NoClip if enabled AND active
+    if Config.Physics.NoClip and Config.Physics.NoClipActive then
         for _, part in pairs(char:GetDescendants()) do
             if part:IsA("BasePart") then part.CanCollide = false end
         end
