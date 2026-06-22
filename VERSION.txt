@@ -1,6 +1,20 @@
-Beep Framework v3.4.3
+Beep Framework v3.5.0
 Release Date: June 22, 2026
-Build: Stable - FIX UI TRABADA (drag pegado)
+Build: Stable - RAGEBOT GAME PROFILES
+
+==============================================
+v3.5.0 - RAGEBOT GAME PROFILES
+==============================================
+🎮 Selector "Ragebot Game Profile" que ajusta la estrategia segun el juego:
+- Auto (detecta el juego por nombre y aplica el perfil)
+- Manual (usa los controles del menu)
+- Universal / Rivals / Arsenal / Jailbreak
+
+Cada perfil define: parte del cuerpo, visible check, prediccion, fire rate, metodo de disparo.
+Nucleo universal (snap camara + disparo) funciona en juegos con raycast desde camara.
+
+NOTA HONESTA: los perfiles ajustan la estrategia, no hacen silent-aim por remotes privados.
+Efectivo en juegos client-side (Arsenal). En server-side el kill lo decide el servidor.
 
 ==============================================
 v3.4.3 - FIX: UI SE TRABABA

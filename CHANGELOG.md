@@ -1,5 +1,32 @@
 # Beep Framework - Changelog
 
+## Version 3.5.0 (2026-06-22) - RAGEBOT GAME PROFILES
+
+### 🎮 NUEVO: Perfiles de juego para el Ragebot
+Ahora el ragebot tiene un selector **"Ragebot Game Profile"** que ajusta su estrategia según el juego.
+
+**Opciones:**
+- **Auto** - detecta el juego automáticamente (por el nombre del PlaceId) y aplica el perfil correcto
+- **Manual** - usa los controles individuales del menú (Target Part, Visible Check, Prediction, Fire Rate)
+- **Universal** - estrategia genérica (snap de cámara + disparo), funciona en juegos con raycast desde cámara
+- **Rivals** - Head, requiere línea de visión, disparo por click
+- **Arsenal** - Head, fire rate rápido, disparo por click
+- **Jailbreak** - Head, con predicción, disparo por activación de tool
+
+### ⚙️ CÓMO FUNCIONA
+- Con **Auto**, al cargar detecta el juego y elige el perfil (Rivals/Arsenal/Jailbreak/Universal)
+- Cada perfil define: parte del cuerpo, visible check, predicción, fire rate y método de disparo
+- Con **Manual**, mandan los controles del menú
+- El núcleo universal (snap de cámara + Shoot con tool:Activate / click / VirtualUser) funciona en cualquier juego donde el arma dispara desde la cámara
+
+### ⚠️ HONESTIDAD TÉCNICA
+- Los perfiles ajustan la ESTRATEGIA, no hacen silent-aim por RemoteEvents privados (esos cambian por juego y no se pueden obtener de forma confiable)
+- En juegos con hit detection client-side (ej. Arsenal) = muy efectivo
+- En juegos con validación server-side, el aim es perfecto pero el kill lo decide el servidor
+- Investigación basada en el modelo híbrido cliente/servidor de los shooters de Roblox
+
+---
+
 ## Version 3.4.3 (2026-06-22) - FIX: UI SE TRABABA (drag pegado)
 
 ### 🐛 ARREGLADO: la UI entera se trababa y no se podía clickear nada
