@@ -1,9 +1,20 @@
-Beep Framework v3.5.2
+Beep Framework v3.5.3
 Release Date: June 22, 2026
-Build: Stable - RAGEBOT FACE TARGET
+Build: Stable - RAGEBOT IGNORA INMUNES
 
 ==============================================
-v3.5.2 - RAGEBOT FACE TARGET (arregla tiros en Rivals)
+v3.5.3 - RAGEBOT IGNORA ENEMIGOS INMUNES
+==============================================
+🛡️ Arreglado: el ragebot disparaba a enemigos con spawn protection (ForceField) sin poder matarlos
+Solucion: "Ragebot Ignore Immune (ForceField)" (ON por defecto)
+- Detecta el escudo de spawn y salta a esos enemigos
+- Solo apunta a los que SI puedes matar -> mas efectivo, sobrevives mas
+
+NOTA: no se puede hacer invisible a otros jugadores (ellos te renderizan desde el servidor).
+Para sobrevivir: matar rapido (hecho) + ignorar inmunes (hecho). Si te matan al TP encima, apaga Auto TP y mata desde lejos.
+
+==============================================
+v3.5.2 - RAGEBOT FACE TARGET
 ==============================================
 🎯 Arreglado: en Rivals solo daba a quien estaba al frente
 Causa: las balas salen del cuerpo/canon, no de la camara. El cuerpo no encaraba al enemigo.

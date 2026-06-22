@@ -1,5 +1,20 @@
 # Beep Framework - Changelog
 
+## Version 3.5.3 (2026-06-22) - RAGEBOT IGNORA ENEMIGOS INMUNES
+
+### 🛡️ ARREGLADO: el ragebot disparaba a enemigos inmunes (spawn protection)
+En Rivals los jugadores recién aparecidos tienen un **ForceField** (escudo de spawn) que los hace inmunes unos segundos. El ragebot perdía el tiempo disparándoles (sin poder matarlos) mientras los enemigos sí te mataban a ti.
+
+**Solución:** nuevo **"Ragebot Ignore Immune (ForceField)"** (ON por defecto)
+- El ragebot detecta el ForceField y **salta** a esos enemigos
+- Solo apunta a los que SÍ puedes matar → mucho más efectivo y sobrevives más
+
+### ℹ️ SOBRE "QUE NO ME VEAN"
+No es posible hacerte invisible para otros jugadores: ellos renderizan tu personaje desde el servidor, no desde tu cliente. Una "invisibilidad" client-side solo te oculta en TU pantalla, no en la de ellos.
+Para sobrevivir mejor: mata más rápido (ya hecho) e ignora inmunes (ya hecho). Si te matan al teletransportarte encima, considera APAGAR Auto TP y matar desde lejos (con Face Target ya pegas a distancia).
+
+---
+
 ## Version 3.5.2 (2026-06-22) - RAGEBOT FACE TARGET (arregla tiros en Rivals)
 
 ### 🎯 ARREGLADO: en Rivals solo daba a quien estaba al frente
