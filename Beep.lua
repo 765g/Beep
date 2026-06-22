@@ -2,7 +2,7 @@
 -- Universal ESP, Aimbot & Physics Controller
 
 -- VERSION CONTROL (Update this for each new version)
-local BEEP_VERSION = "v3.6.2"
+local BEEP_VERSION = "v3.6.3"
 
 local StartTime = tick()
 if not game:IsLoaded() then
@@ -75,7 +75,6 @@ local Config = {
         RagebotTargetPart = "Head",
         RagebotMode = "Closest",
         RagebotFullMap = false,
-        RagebotAutoShoot = false,
         RagebotFireRate = 0.05,
         RagebotTeamCheck = true,
         RagebotVisibleCheck = false,
@@ -1216,45 +1215,11 @@ end)
 -- ===== RAGEBOT SYSTEM =====
 -- Aggressive aimbot: targets any player on the whole map, snaps to target, auto-fires.
 -- Works best in client-sided hit detection games (e.g. Arsenal).
-local lastRageShot = 0
-
-local function RagebotShoot()
-    local currentTime = tick()
-    local settings = ragebotSettings()
-    
-    -- Check fire rate
-    if currentTime - lastRageShot < settings.fireRate then
-        return -- Too soon
-    end
-    lastRageShot = currentTime
-    
-    task.spawn(function()
-        local char = LocalPlayer.Character
-        if not char then return end
-        
-        -- Method 1: Tool Activation (most reliable for Roblox games)
-        local tool = char:FindFirstChildOfClass("Tool")
-        if tool then
-            pcall(function() tool:Activate() end)
-            task.wait(0.05)
-            pcall(function() tool:Deactivate() end)
-            return
-        end
-        
-        -- Method 2: Mouse click simulation
-        pcall(function()
-            mouse1click()
-        end)
-    end)
-end
-
 local Ragebot = {}
-local lastRageShot = 0
 
--- Per-game profiles. These tune the strategy; the universal core (camera snap + fire)
+-- Per-game profiles. These tune the strategy; the universal core (camera snap)
 -- works on any game whose guns raycast from the camera.
--- part = body part to aim, visible = require line of sight, prediction = lead for projectiles,
--- fireRate = seconds between shots, fireMethod = how Shoot() prioritizes input.
+-- Note: For auto-shoot, enable Triggerbot (works with Ragebot)
 local GameProfiles = {
     ["Universal"] = {part = "Head", visible = false, prediction = 0,  fireRate = 0.03, fireMethod = "auto", faceTarget = true},
     ["Rivals"]    = {part = "Head", visible = false, prediction = 0,  fireRate = 0.0,  fireMethod = "hold", faceTarget = true},
@@ -1423,11 +1388,9 @@ RunService.RenderStepped:Connect(function(dt)
 
     -- Snap camera to target (this is what registers hits in client-sided games)
     Camera.CFrame = CFrame.new(Camera.CFrame.Position, aimPos)
-
-    -- Auto fire (using same method as Triggerbot - WORKS!)
-    if Config.Combat.RagebotAutoShoot then
-        RagebotShoot()
-    end
+    
+    -- Note: For auto-shoot with Ragebot, enable Triggerbot
+    -- The Triggerbot will handle shooting when aimed at target
 end)
 
 -- ===== RAGEBOT NOCLIP (with collision restore) =====
@@ -2334,7 +2297,21 @@ end)
 UI:CreateSelector(CombatPage, "Ragebot Target", "Combat", "RagebotMode", {"Closest", "Lowest Health", "Crosshair"})
 UI:CreateSelector(CombatPage, "Ragebot Body Part", "Combat", "RagebotTargetPart", {"Head", "UpperTorso", "Torso", "HumanoidRootPart"})
 UI:CreateToggle(CombatPage, "Ragebot Full Map", "Combat", "RagebotFullMap")
-UI:CreateToggle(CombatPage, "Ragebot Auto Shoot", "Combat", "RagebotAutoShoot")
+
+-- Info Label: For Ragebot Auto Shoot, enable Triggerbot
+local InfoFrame = UI:Create("Frame", {Size = UDim2.new(1, -10, 0, 50), BackgroundColor3 = Color3.fromRGB(35, 90, 140), ZIndex = 4, Parent = CombatPage})
+Instance.new("UICorner", InfoFrame).CornerRadius = UDim.new(0, 8)
+UI:Create("UIStroke", {Color = Color3.fromRGB(60, 140, 200), Thickness = 1.5, Transparency = 0.3, Parent = InfoFrame})
+UI:Create("TextLabel", {
+    Size = UDim2.new(1, -20, 1, 0), Position = UDim2.new(0, 10, 0, 0),
+    BackgroundTransparency = 1, 
+    Text = "💡 For Ragebot Auto-Shoot: Enable Triggerbot",
+    TextColor3 = Color3.fromRGB(200, 230, 255), 
+    Font = Enum.Font.GothamBold, TextSize = 12,
+    TextXAlignment = Enum.TextXAlignment.Center, TextWrapped = true,
+    ZIndex = 5, Parent = InfoFrame
+})
+
 UI:CreateSlider(CombatPage, "Ragebot Fire Rate (s)", 0, 1, "Combat", "RagebotFireRate")
 UI:CreateToggle(CombatPage, "Ragebot Team Check", "Combat", "RagebotTeamCheck")
 UI:CreateToggle(CombatPage, "Ragebot Visible Check (no walls)", "Combat", "RagebotVisibleCheck")

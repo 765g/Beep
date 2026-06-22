@@ -1,6 +1,84 @@
-Beep Framework v3.6.2
+Beep Framework v3.6.3
 Release Date: June 22, 2026
-Build: Stable - ALL FEATURES OFF BY DEFAULT
+Build: Stable - RAGEBOT AUTO SHOOT REMOVED
+
+==============================================
+v3.6.3 - RAGEBOT AUTO SHOOT REMOVED
+==============================================
+🔧 CAMBIO IMPORTANTE: Ragebot ya NO tiene Auto Shoot propio
+
+**Antes (v3.6.2):**
+- ❌ Ragebot tenía su propio "Auto Shoot" toggle
+- ❌ Código duplicado
+
+**Ahora (v3.6.3):**
+- ✅ Ragebot NO tiene Auto Shoot propio
+- ✅ **Para auto-shoot con Ragebot: Activa TRIGGERBOT**
+- ✅ Un solo sistema de disparo (Triggerbot)
+- ✅ Código más limpio
+
+---
+
+### 💡 CÓMO USAR RAGEBOT CON AUTO-SHOOT:
+
+```
+1. Activa Ragebot ✅
+2. Activa Triggerbot ✅
+3. Ragebot apunta
+4. Triggerbot dispara
+= AUTO KILL!
+```
+
+**Label en UI:**
+```
+💡 For Ragebot Auto-Shoot: Enable Triggerbot
+```
+
+---
+
+### ✅ VENTAJAS:
+
+1. **Un solo sistema** - Triggerbot maneja TODO el disparo
+2. **Más simple** - No hay confusión
+3. **Más limpio** - Código reducido
+4. **Funciona igual** - Mismo resultado
+
+---
+
+### 🎯 CONFIGURACIÓN RECOMENDADA:
+
+**Ragebot + Auto-Shoot:**
+```
+✅ Ragebot (Enable)
+✅ Triggerbot
+✅ Ragebot Full Map (opcional)
+✅ Ragebot Face Target (para RIVALS)
+Target: Closest
+Body Part: Head
+```
+
+**Ragebot SIN Auto-Shoot (manual):**
+```
+✅ Ragebot (Enable)
+❌ Triggerbot (OFF)
+= Solo apunta, tú disparas manualmente
+```
+
+---
+
+### 📝 CAMBIOS TÉCNICOS:
+
+**Eliminado:**
+- ❌ `Config.Combat.RagebotAutoShoot` (ya no existe)
+- ❌ Toggle "Ragebot Auto Shoot" (reemplazado con label)
+- ❌ Función `RagebotShoot()` (ya no se usa)
+- ❌ Código de disparo en ragebot loop
+
+**Agregado:**
+- ✅ Label informativo: "💡 For Ragebot Auto-Shoot: Enable Triggerbot"
+- ✅ Comentario en código: "Note: For auto-shoot with Ragebot, enable Triggerbot"
+
+---
 
 ==============================================
 v3.6.2 - CLEAN STARTUP (ALL OFF BY DEFAULT)
