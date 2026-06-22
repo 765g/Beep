@@ -1,6 +1,13 @@
-Beep Framework v3.3.1
+Beep Framework v3.3.2
 Release Date: June 22, 2026
-Build: Stable - SOBER PALETTE & MINIMIZE FIX
+Build: Stable - FULL THEME ACCENT SYNC
+
+==============================================
+v3.3.2 - CAMBIOS
+==============================================
+🎨 El theme changer ahora recolorea TODOS los acentos (switches ON, sliders, keybinds, selectores, indicador de tab, scrollbar, logo, badge, FOV, watermark, notificaciones)
+🔧 Nuevo sistema AccentObjects/RegisterAccent/RefreshAccent
+🔧 Primer swatch del tema ahora es "Steel" (azul-acero sobrio por defecto)
 
 ==============================================
 v3.3.1 - CAMBIOS

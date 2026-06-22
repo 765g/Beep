@@ -1,5 +1,23 @@
 # Beep Framework - Changelog
 
+## Version 3.3.2 (2026-06-22) - FULL THEME ACCENT SYNC
+
+### 🎨 EL TEMA AHORA CAMBIA TODOS LOS ACENTOS
+Antes, al cambiar el color de tema solo cambiaban algunos elementos (logo, badge, borde). Ahora cambia TODO:
+- Switches encendidos (ON)
+- Rellenos y valores de los sliders
+- Texto y borde de los keybinds
+- Fondo de los selectores
+- Indicador de tab activo + scrollbar
+- Logo, badge de versión, FOV circle, watermark, notificaciones
+
+### 🔧 TÉCNICO
+- Nuevo sistema `AccentObjects` / `RegisterAccent` / `RefreshAccent`
+- Cada elemento con acento se registra y se recolorea al cambiar el tema
+- Primer swatch del Theme Changer cambiado de "Purple" a "Steel" (el azul-acero sobrio por defecto, ahora seleccionable)
+
+---
+
 ## Version 3.3.1 (2026-06-22) - SOBER PALETTE & MINIMIZE FIX
 
 ### 🎨 NUEVA PALETA SOBRIA (menos "vibe coded")

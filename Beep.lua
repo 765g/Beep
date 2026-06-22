@@ -2,7 +2,7 @@
 -- Universal ESP, Aimbot & Physics Controller
 
 -- VERSION CONTROL (Update this for each new version)
-local BEEP_VERSION = "v3.3.1"
+local BEEP_VERSION = "v3.3.2"
 
 local StartTime = tick()
 if not game:IsLoaded() then
@@ -98,7 +98,7 @@ local Config = {
     },
     UI = {
         ThemeColors = {
-            Color3.fromRGB(140, 80, 255), -- Purple (default)
+            Color3.fromRGB(96, 116, 158), -- Steel (sober default)
             Color3.fromRGB(255, 80, 80),  -- Red
             Color3.fromRGB(80, 160, 255), -- Blue
             Color3.fromRGB(80, 255, 120), -- Green
@@ -110,6 +110,18 @@ local Config = {
 
 -- UI Constructor
 local UI = { Tabs = {}, CurrentTab = nil, Visible = true, Active = true }
+
+-- Accent registry: elements that should recolor when the theme changes
+local AccentObjects = {}
+local function RegisterAccent(fn)
+    table.insert(AccentObjects, fn)
+    pcall(fn, Config.Visuals.Accent)
+end
+local function RefreshAccent(color)
+    for _, fn in ipairs(AccentObjects) do
+        pcall(fn, color)
+    end
+end
 
 function UI:Create(class, props)
     local inst = Instance.new(class)
@@ -183,6 +195,7 @@ local LogoMark = UI:Create("Frame", {
     Parent = TopBar
 })
 Instance.new("UICorner", LogoMark).CornerRadius = UDim.new(1, 0)
+RegisterAccent(function(c) LogoMark.BackgroundColor3 = c end)
 
 local TitleLabel = UI:Create("TextLabel", {
     Size = UDim2.new(0, 70, 1, 0),
@@ -210,6 +223,7 @@ local VersionBadge = UI:Create("TextLabel", {
     Parent = TopBar
 })
 Instance.new("UICorner", VersionBadge).CornerRadius = UDim.new(0, 6)
+RegisterAccent(function(c) VersionBadge.TextColor3 = c end)
 
 -- Close button (hides menu)
 local CloseBtn = UI:Create("TextButton", {
@@ -308,6 +322,7 @@ local ProjectLabel = UI:Create("TextLabel", {
     ZIndex = 5,
     Parent = Sidebar
 })
+RegisterAccent(function(c) ProjectLabel.TextColor3 = c end)
 
 -- Watermark
 local Watermark = UI:Create("TextLabel", {
@@ -328,6 +343,10 @@ local Watermark = UI:Create("TextLabel", {
 UI:Create("UIPadding", {PaddingLeft = UDim.new(0, 10), PaddingTop = UDim.new(0, 10), Parent = Watermark})
 Instance.new("UICorner", Watermark).CornerRadius = UDim.new(0, 8)
 UI:Create("UIStroke", {Color = Config.Visuals.Accent, Thickness = 1, Transparency = 0.5, Parent = Watermark})
+RegisterAccent(function(c)
+    local s = Watermark and Watermark:FindFirstChildOfClass("UIStroke")
+    if s then s.Color = c end
+end)
 
 -- Make Watermark Draggable
 local watermarkDragging = false
@@ -554,6 +573,7 @@ local FOVContainer = UI:Create("Frame", {
 })
 local FOVStroke = UI:Create("UIStroke", {Color = Config.Visuals.Accent, Thickness = 1, Transparency = 0.5, Parent = FOVContainer})
 Instance.new("UICorner", FOVContainer).CornerRadius = UDim.new(1, 0)
+RegisterAccent(function(c) FOVStroke.Color = c end)
 
 RunService.RenderStepped:Connect(function()
     if not UI.Active then return end
@@ -589,6 +609,7 @@ function UI:CreateTab(name)
         ZIndex = 3,
         Parent = Container
     })
+    RegisterAccent(function(c) Page.ScrollBarImageColor3 = c end)
     local Layout = UI:Create("UIListLayout", {
         Padding = UDim.new(0, 8),
         SortOrder = Enum.SortOrder.LayoutOrder,
@@ -621,6 +642,7 @@ function UI:CreateTab(name)
         Parent = TabButton
     })
     Instance.new("UICorner", Indicator).CornerRadius = UDim.new(1, 0)
+    RegisterAccent(function(c) Indicator.BackgroundColor3 = c end)
 
     local TabLabel = UI:Create("TextLabel", {
         Size = UDim2.new(1, -20, 1, 0),
@@ -715,6 +737,9 @@ function UI:CreateToggle(parent, text, configSection, configKey, callback)
     -- Store indicator reference for keybind updates
     local key = configSection .. "." .. configKey
     ToggleIndicators[key] = {track = Track, knob = Knob}
+    RegisterAccent(function(c)
+        if Config[configSection][configKey] then Track.BackgroundColor3 = c end
+    end)
     
     Track.MouseButton1Click:Connect(function()
         if not UI.Active then return end
@@ -747,6 +772,7 @@ function UI:CreateSlider(parent, text, min, max, configSection, configKey, callb
     
     local Fill = UI:Create("Frame", {Size = UDim2.new((Config[configSection][configKey] - min)/(max - min), 0, 1, 0), BackgroundColor3 = Config.Visuals.Accent, ZIndex = 6, Parent = SlideBar})
     Instance.new("UICorner", Fill).CornerRadius = UDim.new(0, 3)
+    RegisterAccent(function(c) Fill.BackgroundColor3 = c; ValueLabel.TextColor3 = c end)
 
     -- Knob
     local Knob = UI:Create("Frame", {
@@ -793,7 +819,8 @@ function UI:CreateKeybind(parent, text, configSection, configKey)
         TextColor3 = Config.Visuals.Accent, Font = Enum.Font.GothamBold, TextSize = 11, AutoButtonColor = false, ZIndex = 5, Parent = Frame
     })
     Instance.new("UICorner", KeyButton).CornerRadius = UDim.new(0, 7)
-    UI:Create("UIStroke", {Color = Config.Visuals.Accent, Thickness = 1, Transparency = 0.6, Parent = KeyButton})
+    local kbStroke = UI:Create("UIStroke", {Color = Config.Visuals.Accent, Thickness = 1, Transparency = 0.6, Parent = KeyButton})
+    RegisterAccent(function(c) KeyButton.TextColor3 = c; kbStroke.Color = c end)
     
     local listening = false
     KeyButton.MouseButton1Click:Connect(function()
@@ -833,6 +860,7 @@ function UI:CreateSelector(parent, text, configSection, configKey, options)
         TextColor3 = Color3.new(1,1,1), Font = Enum.Font.GothamBold, TextSize = 11, AutoButtonColor = false, ZIndex = 5, Parent = Frame
     })
     Instance.new("UICorner", SelectorButton).CornerRadius = UDim.new(0, 7)
+    RegisterAccent(function(c) SelectorButton.BackgroundColor3 = c end)
     
     SelectorButton.MouseButton1Click:Connect(function()
         if not UI.Active then return end
@@ -2013,7 +2041,7 @@ local ThemeContainer = UI:Create("Frame", {
     BackgroundTransparency = 1, ZIndex = 5, Parent = ThemeFrame
 })
 
-local themeNames = {"Purple", "Red", "Blue", "Green", "Yellow", "Pink"}
+local themeNames = {"Steel", "Red", "Blue", "Green", "Yellow", "Pink"}
 for i, color in ipairs(Config.UI.ThemeColors) do
     local ThemeBtn = UI:Create("TextButton", {
         Size = UDim2.new(0, 70, 0, 30),
@@ -2031,16 +2059,8 @@ for i, color in ipairs(Config.UI.ThemeColors) do
     ThemeBtn.MouseButton1Click:Connect(function()
         Config.Misc.ThemeColor = i
         Config.Visuals.Accent = color
-        -- Update all UI elements with new color
-        MainStroke.Color = color
-        ProjectLabel.TextColor3 = color
-        FOVStroke.Color = color
-        LogoMark.BackgroundColor3 = color
-        VersionBadge.TextColor3 = color
-        if Watermark then
-            local stroke = Watermark:FindFirstChildOfClass("UIStroke")
-            if stroke then stroke.Color = color end
-        end
+        -- Recolor every accent element registered across the UI
+        RefreshAccent(color)
         UI:Notify("Theme changed to " .. themeNames[i])
     end)
 end
