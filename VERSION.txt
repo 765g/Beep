@@ -1,55 +1,50 @@
-Beep Framework v3.2.8
-Release Date: June 21, 2026
-Build: Stable - TWO-LEVEL TOGGLE SYSTEM
+Beep Framework v3.3.0
+Release Date: June 22, 2026
+Build: Stable - ELEGANT UI REDESIGN
 
-TWO-LEVEL SYSTEM (PERFECTO):
-🔧 Nivel 1 - Enable en menú: Habilita el sistema
-🎮 Nivel 2 - Keybind: Toggle temporal ON/OFF
+==============================================
+NUEVO DISEÑO (v3.3.0) - UI ELEGANTE
+==============================================
+✨ Barra de titulo superior con logo, nombre y badge de version
+✨ Botones de Minimizar (—) y Cerrar (✕) en la ventana
+✨ Ventana mas grande (660x480) con sombra y degradado morado
+✨ Tabs laterales con barra indicadora animada + hover suave
+✨ Toggles modernos: switches deslizantes animados (en vez de [ON]/[OFF])
+✨ Sliders mejorados con knob arrastrable y valor a la derecha
+✨ Keybinds y selectores con estilo mas limpio
+✨ Notificaciones rediseñadas con barra de acento
+✨ Theme changer actualiza TODOS los nuevos elementos
 
-EJEMPLO:
-1. Activa "Enable Speed Hack" en menú → Sistema habilitado
-2. Presiona LeftControl → Speed ON
-3. Presiona LeftControl otra vez → Speed OFF
-4. "Enable Speed Hack" sigue ON, puedes seguir usando LeftControl
-5. Desactiva "Enable Speed Hack" → LeftControl deja de funcionar
+IMPORTANTE: Toda la funcionalidad se mantiene IGUAL que v3.2.8.
+Solo cambio el diseño visual, NO la logica.
+
+==============================================
+SISTEMA DE DOS NIVELES (Se mantiene)
+==============================================
+Nivel 1 - Enable en menu: Habilita el sistema
+Nivel 2 - Keybind: Toggle temporal ON/OFF
 
 KEYBINDS (3 total):
-✅ E - Fly Toggle (solo funciona si Fly enabled en menú)
-✅ LeftControl - Speed Toggle (solo funciona si SpeedEnabled en menú)
-✅ F2 - NoClip Toggle (solo funciona si NoClip enabled en menú)
+- E - Fly Toggle (solo si Fly enabled en menu)
+- LeftControl - Speed Toggle (solo si SpeedEnabled en menu)
+- F2 - NoClip Toggle (solo si NoClip enabled en menu)
+- INSERT - Abrir/Cerrar menu
 
-Features:
+==============================================
+FEATURES
+==============================================
 - Combat: Aim Assist, Target Selector, Hold to Aim, Auto Shoot, Triggerbot, Rapid Fire, No Recoil, No Spread, Auto Reload, Kill Aura, Team Check
-- Visuals: ESP with TEAM COLORS (Red=Enemy, Green=Teammate), Names, Distance, Head Dot (ALL PLAYERS), Skeleton ESP, IDs, 3D Chams, Tracers, Health Bars, 2D Boxes
-- Physics: Speed Hack, Jump Boost, Infinite Jump (NO COOLDOWN), Click Teleport, NoClip, Fly Mode
-- Misc: Watermark (Draggable), Theme Changer, Remove Fog, Anti-AFK, Fullbright, FOV Changer, Smart ESP Toggle, NoClip Toggle
-
-KEYBINDS (Full Toggle ON/OFF):
-- Fly Toggle: E (toggle completo + actualiza toggle en menú)
-- Speed Toggle: LeftControl (toggle completo + actualiza toggle en menú)
-- NoClip Toggle: F2 (toggle completo + actualiza toggle en menú)
-- ESP: NO KEYBIND (solo se controla desde menú)
-
-HOW THEY WORK:
-- Primera vez: Activa el módulo (ON)
-- Segunda vez: Desactiva el módulo (OFF)
-- Tercera vez: Activa otra vez (ON)
-- Y así sucesivamente... toggle infinito
+- Visuals: ESP con TEAM COLORS, Names, Distance, Head Dot, Skeleton ESP, IDs, 3D Chams, Tracers, Health Bars, 2D Boxes
+- Physics: Speed Hack, Jump Boost, Infinite Jump, Click Teleport, NoClip, Fly Mode
+- Misc: Watermark, Theme Changer, Remove Fog, Anti-AFK, Fullbright, FOV Changer, Teleport to Player
 
 STARTUP:
 - Todo OFF excepto Watermark
 - Inicio completamente limpio
 
 EXIT CHEAT:
-- Limpieza completa: Health Bars, Head Dots, Name Tags, FOV, Watermark, ESP, Tracers, Boxes, Skeleton
-- ZERO rastro después de salir
+- Limpieza completa sin dejar rastro
 
 Performance: Ultra-optimized - Zero lag
 Compatibility: Universal (all executors & games)
 Status: ALL FEATURES 100% FUNCTIONAL
-
-CHANGES FROM v3.2.6:
-✅ FIXED: Keybinds ahora funcionan como toggles ON/OFF completos
-✅ No necesitas abrir menú para reactivar features
-✅ Mucho más conveniente y rápido
-✅ Visual sync mantenido (toggles en menú se actualizan)

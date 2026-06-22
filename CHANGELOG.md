@@ -1,5 +1,45 @@
 # Beep Framework - Changelog
 
+## Version 3.3.0 (2026-06-22) - ELEGANT UI REDESIGN
+
+### ✨ NUEVO DISEÑO VISUAL (UI COMPLETAMENTE RENOVADA)
+
+Rediseño completo de la interfaz manteniendo el 100% de la funcionalidad.
+
+**Ventana principal:**
+- Barra de título superior con logo (punto de acento), nombre "Beep" y badge de versión
+- Botones de Minimizar (—) y Cerrar (✕) con animaciones hover
+- Ventana más grande (660x480) con sombra (drop shadow) y degradado morado
+- Bordes redondeados más suaves
+
+**Navegación:**
+- Tabs laterales con barra indicadora animada (se desliza al cambiar)
+- Efecto hover suave en cada tab
+- Separador visual entre sidebar y contenido
+
+**Componentes:**
+- 🔘 Toggles modernos: switches deslizantes animados (knob que se mueve) en vez del texto [ON]/[OFF]
+- 🎚️ Sliders mejorados: knob arrastrable + valor mostrado a la derecha en color de acento
+- ⌨️ Keybinds: estilo más limpio con borde de acento
+- 🔽 Selectores: flechas ‹ › elegantes
+- 🔔 Notificaciones: rediseñadas con barra de acento lateral
+
+**Theme Changer:**
+- Ahora actualiza TODOS los elementos nuevos (logo, badge de versión, etc.)
+
+### 🛡️ FUNCIONALIDAD INTACTA
+- Sistema de dos niveles (Enable + keybind) se mantiene IGUAL
+- Todas las features (Combat, Visual, Physics, Misc) funcionan exactamente igual
+- Solo cambió el diseño visual, NO la lógica
+- Mismas firmas de funciones helper (CreateToggle, CreateSlider, etc.)
+- Exit Cheat sigue limpiando todo sin dejar rastro
+
+### 🎮 CONTROLES
+- INSERT - Abrir/Cerrar menú
+- E - Fly Toggle | LeftControl - Speed Toggle | F2 - NoClip Toggle
+
+---
+
 ## Version 3.2.8 (2026-06-21) - TWO-LEVEL TOGGLE SYSTEM
 
 ### ✅ FIXED - Sistema de dos niveles implementado correctamente
