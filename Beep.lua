@@ -54,6 +54,17 @@ local Config = {
         SpeedEnabled = false,
         SpeedKey = "LeftControl",
         JumpEnabled = false
+    },
+    Misc = {
+        Tracers = false,
+        HealthBars = false,
+        Fullbright = false,
+        InfiniteJump = false,
+        FOVChanger = false,
+        FOVValue = 70,
+        KillAura = false,
+        KillAuraRange = 20,
+        TeleportPlayer = nil
     }
 }
 
@@ -149,6 +160,11 @@ CloseMenuBtn.MouseButton1Click:Connect(function()
         end
     end
     ESPObjects = {}
+    
+    -- Clean up tracers
+    if TracerFolder then
+        TracerFolder:Destroy()
+    end
     
     UI.Screen:Destroy()
 end)
@@ -567,6 +583,168 @@ end
 for _, p in pairs(Players:GetPlayers()) do Visuals:DrawESPOnCharacter(p) end
 Players.PlayerAdded:Connect(function(p) Visuals:DrawESPOnCharacter(p) end)
 
+-- Tracers System
+local TracerFolder = Instance.new("Folder", CoreGui)
+TracerFolder.Name = "BeepTracers"
+
+local function CreateTracer(player)
+    if player == LocalPlayer then return end
+    
+    local function setupTracer(char)
+        local rootPart = char:WaitForChild("HumanoidRootPart", 5)
+        if not rootPart then return end
+        
+        local attachment0 = Instance.new("Attachment", Camera)
+        local attachment1 = Instance.new("Attachment", rootPart)
+        local beam = Instance.new("Beam", TracerFolder)
+        
+        beam.Attachment0 = attachment0
+        beam.Attachment1 = attachment1
+        beam.Color = ColorSequence.new(Config.Visuals.Accent)
+        beam.Width0 = 0.1
+        beam.Width1 = 0.1
+        beam.FaceCamera = true
+        beam.Enabled = false
+        
+        task.spawn(function()
+            while beam.Parent and char:IsDescendantOf(Workspace) and UI.Active do
+                beam.Enabled = Config.Misc.Tracers
+                task.wait(0.1)
+            end
+            beam:Destroy()
+            attachment0:Destroy()
+            attachment1:Destroy()
+        end)
+    end
+    
+    if player.Character then task.spawn(function() setupTracer(player.Character) end) end
+    player.CharacterAdded:Connect(function(char) task.spawn(function() setupTracer(char) end) end)
+end
+
+for _, p in pairs(Players:GetPlayers()) do CreateTracer(p) end
+Players.PlayerAdded:Connect(function(p) CreateTracer(p) end)
+
+-- Health Bars System
+local function CreateHealthBar(player)
+    if player == LocalPlayer then return end
+    
+    local function setupHealthBar(char)
+        local head = char:WaitForChild("Head", 10)
+        local hum = char:WaitForChild("Humanoid", 10)
+        if not head or not hum then return end
+        
+        local billboardGui = Instance.new("BillboardGui", head)
+        billboardGui.Size = UDim2.new(4, 0, 0.5, 0)
+        billboardGui.StudsOffset = Vector3.new(0, 4, 0)
+        billboardGui.AlwaysOnTop = true
+        billboardGui.Enabled = false
+        
+        local frame = Instance.new("Frame", billboardGui)
+        frame.Size = UDim2.new(1, 0, 1, 0)
+        frame.BackgroundColor3 = Color3.new(0.1, 0.1, 0.1)
+        frame.BorderSizePixel = 0
+        
+        local healthBar = Instance.new("Frame", frame)
+        healthBar.Size = UDim2.new(1, 0, 1, 0)
+        healthBar.BackgroundColor3 = Color3.new(0, 1, 0)
+        healthBar.BorderSizePixel = 0
+        
+        Instance.new("UICorner", frame).CornerRadius = UDim.new(0, 4)
+        Instance.new("UICorner", healthBar).CornerRadius = UDim.new(0, 4)
+        
+        task.spawn(function()
+            while billboardGui.Parent and char:IsDescendantOf(Workspace) and UI.Active do
+                billboardGui.Enabled = Config.Misc.HealthBars
+                if Config.Misc.HealthBars then
+                    local healthPercent = hum.Health / hum.MaxHealth
+                    healthBar.Size = UDim2.new(healthPercent, 0, 1, 0)
+                    healthBar.BackgroundColor3 = Color3.new(1 - healthPercent, healthPercent, 0)
+                end
+                task.wait(0.1)
+            end
+            billboardGui:Destroy()
+        end)
+    end
+    
+    if player.Character then task.spawn(function() setupHealthBar(player.Character) end) end
+    player.CharacterAdded:Connect(function(char) task.spawn(function() setupHealthBar(char) end) end)
+end
+
+for _, p in pairs(Players:GetPlayers()) do CreateHealthBar(p) end
+Players.PlayerAdded:Connect(function(p) CreateHealthBar(p) end)
+
+-- Fullbright System
+local Lighting = game:GetService("Lighting")
+local originalLighting = {
+    Brightness = Lighting.Brightness,
+    ClockTime = Lighting.ClockTime,
+    FogEnd = Lighting.FogEnd,
+    GlobalShadows = Lighting.GlobalShadows,
+    Ambient = Lighting.Ambient
+}
+
+RunService.RenderStepped:Connect(function()
+    if Config.Misc.Fullbright and UI.Active then
+        Lighting.Brightness = 2
+        Lighting.ClockTime = 12
+        Lighting.FogEnd = 100000
+        Lighting.GlobalShadows = false
+        Lighting.Ambient = Color3.new(1, 1, 1)
+    else
+        Lighting.Brightness = originalLighting.Brightness
+        Lighting.ClockTime = originalLighting.ClockTime
+        Lighting.FogEnd = originalLighting.FogEnd
+        Lighting.GlobalShadows = originalLighting.GlobalShadows
+        Lighting.Ambient = originalLighting.Ambient
+    end
+end)
+
+-- FOV Changer
+RunService.RenderStepped:Connect(function()
+    if Config.Misc.FOVChanger and UI.Active then
+        Camera.FieldOfView = Config.Misc.FOVValue
+    else
+        Camera.FieldOfView = 70
+    end
+end)
+
+-- Infinite Jump
+UserInputService.JumpRequest:Connect(function()
+    if Config.Misc.InfiniteJump and UI.Active then
+        local char = LocalPlayer.Character
+        local hum = char and char:FindFirstChildOfClass("Humanoid")
+        if hum then
+            hum:ChangeState(Enum.HumanoidStateType.Jumping)
+        end
+    end
+end)
+
+-- Kill Aura System
+RunService.Heartbeat:Connect(function()
+    if not Config.Misc.KillAura or not UI.Active then return end
+    local char = LocalPlayer.Character
+    if not char then return end
+    local rootPart = char:FindFirstChild("HumanoidRootPart")
+    if not rootPart then return end
+    
+    for _, player in pairs(Players:GetPlayers()) do
+        if player ~= LocalPlayer and player.Character then
+            local enemyRoot = player.Character:FindFirstChild("HumanoidRootPart")
+            local enemyHum = player.Character:FindFirstChildOfClass("Humanoid")
+            if enemyRoot and enemyHum and enemyHum.Health > 0 then
+                local distance = (rootPart.Position - enemyRoot.Position).Magnitude
+                if distance <= Config.Misc.KillAuraRange then
+                    -- Simulate attack - this works for most Roblox games
+                    local tool = char:FindFirstChildOfClass("Tool")
+                    if tool then
+                        tool:Activate()
+                    end
+                end
+            end
+        end
+    end
+end)
+
 -- Physics System
 local FlyConnection = nil
 local FlyBodyVelocity = nil
@@ -676,6 +854,7 @@ end)
 local CombatPage = UI:CreateTab("Combat")
 local VisualsPage = UI:CreateTab("Visuals")
 local PhysicsPage = UI:CreateTab("Physics")
+local MiscPage = UI:CreateTab("Misc")
 
 -- Combat Controls
 UI:CreateToggle(CombatPage, "Aim Assist", "Combat", "SilentAim")
@@ -706,5 +885,100 @@ UI:CreateToggle(PhysicsPage, "Fly Mode", "Physics", "Fly", function(state)
 end)
 UI:CreateSlider(PhysicsPage, "Fly Speed", 10, 500, "Physics", "FlySpeed")
 UI:CreateKeybind(PhysicsPage, "Fly Toggle Key", "Physics", "FlyKey")
+
+-- Misc Controls
+UI:CreateToggle(MiscPage, "Tracers", "Misc", "Tracers")
+UI:CreateToggle(MiscPage, "Health Bars", "Misc", "HealthBars")
+UI:CreateToggle(MiscPage, "Fullbright", "Misc", "Fullbright")
+UI:CreateToggle(MiscPage, "Infinite Jump", "Misc", "InfiniteJump")
+UI:CreateToggle(MiscPage, "FOV Changer", "Misc", "FOVChanger")
+UI:CreateSlider(MiscPage, "FOV Value", 70, 120, "Misc", "FOVValue")
+UI:CreateToggle(MiscPage, "Kill Aura", "Misc", "KillAura")
+UI:CreateSlider(MiscPage, "Kill Aura Range", 5, 50, "Misc", "KillAuraRange")
+
+-- Teleport to Player Section
+local TeleportFrame = UI:Create("Frame", {Size = UDim2.new(1, -10, 0, 90), BackgroundColor3 = Color3.fromRGB(22, 18, 32), ZIndex = 4, Parent = MiscPage})
+Instance.new("UICorner", TeleportFrame).CornerRadius = UDim.new(0, 6)
+
+UI:Create("TextLabel", {
+    Size = UDim2.new(1, -20, 0, 25), Position = UDim2.new(0, 10, 0, 5),
+    BackgroundTransparency = 1, Text = "Teleport to Player",
+    TextColor3 = Color3.new(1,1,1), Font = Enum.Font.GothamBold, TextSize = 13,
+    TextXAlignment = Enum.TextXAlignment.Left, ZIndex = 5, Parent = TeleportFrame
+})
+
+local PlayerDropdown = UI:Create("TextButton", {
+    Size = UDim2.new(1, -20, 0, 30), Position = UDim2.new(0, 10, 0, 35),
+    BackgroundColor3 = Color3.fromRGB(45, 35, 60), Text = "Select Player...",
+    TextColor3 = Color3.new(1,1,1), Font = Enum.Font.Gotham, TextSize = 11, ZIndex = 5, Parent = TeleportFrame
+})
+Instance.new("UICorner", PlayerDropdown).CornerRadius = UDim.new(0, 6)
+
+local TeleportBtn = UI:Create("TextButton", {
+    Size = UDim2.new(0, 100, 0, 25), Position = UDim2.new(1, -110, 1, -30),
+    BackgroundColor3 = Config.Visuals.Accent, Text = "TELEPORT",
+    TextColor3 = Color3.new(1,1,1), Font = Enum.Font.GothamBold, TextSize = 11, ZIndex = 5, Parent = TeleportFrame
+})
+Instance.new("UICorner", TeleportBtn).CornerRadius = UDim.new(0, 6)
+
+-- Dropdown functionality
+local dropdownOpen = false
+local DropdownList = nil
+
+PlayerDropdown.MouseButton1Click:Connect(function()
+    if dropdownOpen then
+        if DropdownList then DropdownList:Destroy() end
+        dropdownOpen = false
+        return
+    end
+    
+    dropdownOpen = true
+    DropdownList = UI:Create("ScrollingFrame", {
+        Size = UDim2.new(1, -20, 0, 150), Position = UDim2.new(0, 10, 0, 70),
+        BackgroundColor3 = Color3.fromRGB(30, 25, 40), ScrollBarThickness = 4,
+        CanvasSize = UDim2.new(0, 0, 0, 0), ZIndex = 10, Parent = TeleportFrame
+    })
+    Instance.new("UICorner", DropdownList).CornerRadius = UDim.new(0, 6)
+    
+    local Layout = UI:Create("UIListLayout", {Padding = UDim.new(0, 2), Parent = DropdownList})
+    Layout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
+        DropdownList.CanvasSize = UDim2.new(0, 0, 0, Layout.AbsoluteContentSize.Y)
+    end)
+    
+    for _, player in pairs(Players:GetPlayers()) do
+        if player ~= LocalPlayer then
+            local btn = UI:Create("TextButton", {
+                Size = UDim2.new(1, -5, 0, 25), BackgroundColor3 = Color3.fromRGB(45, 35, 60),
+                Text = player.DisplayName, TextColor3 = Color3.new(1,1,1),
+                Font = Enum.Font.Gotham, TextSize = 10, ZIndex = 11, Parent = DropdownList
+            })
+            Instance.new("UICorner", btn).CornerRadius = UDim.new(0, 4)
+            
+            btn.MouseButton1Click:Connect(function()
+                Config.Misc.TeleportPlayer = player
+                PlayerDropdown.Text = player.DisplayName
+                DropdownList:Destroy()
+                dropdownOpen = false
+            end)
+        end
+    end
+end)
+
+TeleportBtn.MouseButton1Click:Connect(function()
+    if Config.Misc.TeleportPlayer and Config.Misc.TeleportPlayer.Character then
+        local targetRoot = Config.Misc.TeleportPlayer.Character:FindFirstChild("HumanoidRootPart")
+        local myChar = LocalPlayer.Character
+        local myRoot = myChar and myChar:FindFirstChild("HumanoidRootPart")
+        
+        if targetRoot and myRoot then
+            myRoot.CFrame = targetRoot.CFrame + Vector3.new(0, 3, 0)
+            UI:Notify("Teleported to " .. Config.Misc.TeleportPlayer.DisplayName)
+        else
+            UI:Notify("Teleport failed")
+        end
+    else
+        UI:Notify("No player selected")
+    end
+end)
 
 UI:Notify("Beep loaded. Press 'Insert' to toggle menu.")
