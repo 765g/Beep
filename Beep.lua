@@ -2325,20 +2325,14 @@ UI:CreateSlider(PhysicsPage, "Fly Speed", 10, 500, "Physics", "FlySpeed")
 UI:CreateKeybind(PhysicsPage, "Fly Toggle Key", "Physics", "FlyKey")
 
 -- Invisibility System
-UI:CreateToggle(PhysicsPage, "Invisibility (may not work in all games)", "Physics", "Invisibility", function(state)
+UI:CreateToggle(PhysicsPage, "Invisibility (local render only)", "Physics", "Invisibility", function(state)
     Config.Physics.InvisibilityActive = state
+    BindInvisibilityCharacter()
+    SetInvisibility(state)
     if state then
-        UI:Notify("⚠️ Invisibility ON (works best in Arsenal, Phantom Forces)")
-        -- Make character transparent
-        for _, v in pairs(InvisibilityParts) do
-            v.Transparency = 1
-        end
+        UI:Notify("👻 Invisibility ON (you appear transparent locally)")
     else
-        UI:Notify("Invisibility OFF")
-        -- Restore character visibility
-        for _, v in pairs(InvisibilityParts) do
-            v.Transparency = 0
-        end
+        UI:Notify("Invisibility OFF (visibility restored)")
     end
 end)
 
@@ -2616,79 +2610,79 @@ UI:Notify("Beep loaded. Press 'Insert' to toggle menu.")
 
 
 --==================================================================--
--- INVISIBILITY SYSTEM (Client-Side Position Exploit)
--- Works best in: Arsenal, Phantom Forces
--- May not work in: RIVALS, Jailbreak (server-side validation)
+-- INVISIBILITY SYSTEM v2 (Improved - No Void Issues)
+-- Works by making parts locally invisible without position tricks
+-- Compatible with: Arsenal, Phantom Forces, most FPS games
 --==================================================================--
 
 local InvisibilityParts = {}
 local InvisibilityEnabled = false
+local OriginalTransparencies = {}
 
 local function BindInvisibilityCharacter()
     local character = LocalPlayer.Character
     if not character then return end
     
-    local humanoid = character:FindFirstChild("Humanoid")
-    local hrp = character:FindFirstChild("HumanoidRootPart")
-    if not humanoid or not hrp then return end
-    
     InvisibilityParts = {}
+    OriginalTransparencies = {}
+    
     for _, v in pairs(character:GetDescendants()) do
-        if v:IsA("BasePart") then
+        if v:IsA("BasePart") and v.Name ~= "HumanoidRootPart" then
             table.insert(InvisibilityParts, v)
+            OriginalTransparencies[v] = v.Transparency
         end
     end
     
-    return character, humanoid, hrp
-end
-
-local function InvisibilityStep()
-    if not Config.Physics.InvisibilityActive then return end
-    
-    local character = LocalPlayer.Character
-    if not character then return end
-    
-    local humanoid = character:FindFirstChild("Humanoid")
-    local hrp = character:FindFirstChild("HumanoidRootPart")
-    if not humanoid or not hrp then return end
-    
-    -- Save real position
-    local oldCFrame = hrp.CFrame
-    local oldOffset = humanoid.CameraOffset
-    
-    -- Teleport far below map
-    local fakePos = CFrame.new(hrp.Position.X, -200000, hrp.Position.Z)
-    hrp.CFrame = fakePos
-    
-    -- Adjust camera offset to show real position
-    humanoid.CameraOffset = Vector3.new(0, 200000, 0)
-    
-    -- Schedule restoration after render
-    task.defer(function()
-        if hrp and hrp.Parent then
-            hrp.CFrame = oldCFrame
-            humanoid.CameraOffset = oldOffset
+    -- Also handle accessories
+    for _, accessory in pairs(character:GetChildren()) do
+        if accessory:IsA("Accessory") then
+            local handle = accessory:FindFirstChild("Handle")
+            if handle then
+                table.insert(InvisibilityParts, handle)
+                OriginalTransparencies[handle] = handle.Transparency
+            end
         end
-    end)
+    end
 end
 
--- Main invisibility loop (runs on Heartbeat, not blocking)
-RunService.Heartbeat:Connect(function()
-    if Config.Physics.InvisibilityActive then
-        pcall(InvisibilityStep)
+-- Apply/Remove invisibility
+local function SetInvisibility(enabled)
+    for _, part in pairs(InvisibilityParts) do
+        if part and part.Parent then
+            if enabled then
+                part.Transparency = 1
+                -- Also hide decals/textures
+                for _, child in pairs(part:GetChildren()) do
+                    if child:IsA("Decal") or child:IsA("Texture") then
+                        child.Transparency = 1
+                    end
+                end
+            else
+                part.Transparency = OriginalTransparencies[part] or 0
+                -- Restore decals/textures
+                for _, child in pairs(part:GetChildren()) do
+                    if child:IsA("Decal") or child:IsA("Texture") then
+                        child.Transparency = 0
+                    end
+                end
+            end
+        end
     end
-end)
+end
 
--- Character respawn handler for invisibility
-LocalPlayer.CharacterAdded:Connect(function()
-    task.wait(1)
+-- Character respawn handler
+LocalPlayer.CharacterAdded:Connect(function(character)
+    task.wait(0.5)
     BindInvisibilityCharacter()
     if Config.Physics.InvisibilityActive then
-        -- Reapply transparency
-        for _, v in pairs(InvisibilityParts) do
-            v.Transparency = 1
-        end
+        SetInvisibility(true)
     end
 end)
 
-print("[Beep] Invisibility system loaded (may not work in all games)")
+-- Initialize on load
+task.spawn(function()
+    task.wait(1)
+    BindInvisibilityCharacter()
+end)
+
+print("[Beep] Invisibility system v2 loaded (local transparency method)")
