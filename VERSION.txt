@@ -1,19 +1,34 @@
-Beep Framework v3.1.1
+Beep Framework v3.2.0
 Release Date: June 21, 2026
-Build: Stable - OPTIMIZED EDITION
+Build: Stable - ADVANCED EDITION
+
+NEW FEATURES:
+- Silent Aim: Apunta sin mover cámara (invisible, usa metamethod hooking)
+- Hitbox Expander: Hace hitboxes enemigos más grandes (1-20 studs ajustable)
+- Skeleton ESP: Muestra estructura del cuerpo con líneas (R15 + R6 support)
+- Keybind System: Teclas personalizadas para togglear features rápidamente
 
 Features:
-- Combat: Aim Assist, Target Selector, Hold to Aim, Auto Shoot, Triggerbot, Rapid Fire, No Recoil, No Spread, Auto Reload, Kill Aura (MOVED), Team Check
-- Visuals: ESP with TEAM COLORS (Red=Enemy, Green=Teammate), Names, Distance, Head Dot (ALL PLAYERS), IDs, 3D Chams, Tracers, Health Bars, 2D Boxes
+- Combat: Aim Assist, Silent Aim (NEW), Target Selector, Hold to Aim, Auto Shoot, Triggerbot, Rapid Fire, No Recoil, No Spread, Auto Reload, Hitbox Expander (NEW), Kill Aura, Team Check
+- Visuals: ESP with TEAM COLORS (Red=Enemy, Green=Teammate), Names, Distance, Head Dot (ALL PLAYERS), Skeleton ESP (NEW), IDs, 3D Chams, Tracers, Health Bars, 2D Boxes
 - Physics: Speed Hack, Jump Boost, Infinite Jump (IMPROVED - NO COOLDOWN), Click Teleport, NoClip, Fly Mode
-- Misc: Watermark (Draggable), Theme Changer, Remove Fog, Anti-AFK, Fullbright, FOV Changer
+- Misc: Watermark (Draggable), Theme Changer, Remove Fog, Anti-AFK, Fullbright, FOV Changer, Keybinds (NEW)
+
+KEYBINDS (Must enable feature in menu first):
+- F1: ESP Toggle
+- F2: Aim Assist Toggle
+- F3: Fly Toggle
+- F4: NoClip Toggle
+- F5: Silent Aim Toggle
 
 Performance: Ultra-optimized - Zero lag
 Compatibility: Universal (all executors & games)
 Status: ALL FEATURES 100% FUNCTIONAL
 
-CHANGES FROM v3.1.0:
-✅ Kill Aura moved from Misc tab to Combat tab
-✅ Infinite Jump IMPROVED - NO COOLDOWN (bypasses game restrictions)
-✅ Infinite Jump now uses dual method (State Change + Velocity Force)
-✅ Jump response time: 50ms (ultra-fast)
+CHANGES FROM v3.1.1:
+✅ Added Silent Aim (true silent - no camera movement)
+✅ Added Hitbox Expander (adjustable size 1-20 studs)
+✅ Added Skeleton ESP (R15 + R6 support, team colors)
+✅ Added Keybind System (5 configurable hotkeys)
+✅ Keybinds only work if feature is enabled in menu first (security)
+✅ All new features fully functional and optimized

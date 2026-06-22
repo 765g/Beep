@@ -2,7 +2,7 @@
 -- Universal ESP, Aimbot & Physics Controller
 
 -- VERSION CONTROL (Update this for each new version)
-local BEEP_VERSION = "v3.1.1"
+local BEEP_VERSION = "v3.2.0"
 
 local StartTime = tick()
 if not game:IsLoaded() then
@@ -37,6 +37,7 @@ local Config = {
         Distance = true,
         IDs = false,
         Skeletons = false,
+        SkeletonESP = false,
         Tracers = false,
         HealthBars = false,
         BoxESP = false,
@@ -45,6 +46,7 @@ local Config = {
     },
     Combat = {
         SilentAim = false,
+        SilentAimEnabled = false,
         FOV = 150,
         Smoothness = 0.5,
         TargetPart = "Head",
@@ -65,7 +67,9 @@ local Config = {
         AutoReload = false,
         KillAura = false,
         KillAuraRange = 20,
-        KillAuraTeamCheck = true
+        KillAuraTeamCheck = true,
+        HitboxExpander = false,
+        HitboxSize = 10
     },
     Physics = {
         Speed = 1,
@@ -90,6 +94,13 @@ local Config = {
         RemoveFog = false,
         Watermark = true,
         ThemeColor = 1
+    },
+    Keybinds = {
+        ESPToggle = "F1",
+        AimAssistToggle = "F2",
+        FlyToggle = "F3",
+        NoClipToggle = "F4",
+        SilentAimToggle = "F5"
     },
     UI = {
         ThemeColors = {
@@ -960,6 +971,137 @@ task.spawn(function()
     end
 end)
 
+-- Hitbox Expander System
+RunService.Heartbeat:Connect(function()
+    if not Config.Combat.HitboxExpander or not UI.Active then return end
+    
+    for _, player in pairs(Players:GetPlayers()) do
+        if player ~= LocalPlayer and player.Character then
+            -- Check if it's an enemy
+            if IsEnemy(player, Config.Combat.TeamCheck) then
+                local hum = player.Character:FindFirstChildOfClass("Humanoid")
+                if hum and hum.Health > 0 then
+                    -- Expand head hitbox
+                    local head = player.Character:FindFirstChild("Head")
+                    if head and head:IsA("BasePart") then
+                        head.Size = Vector3.new(Config.Combat.HitboxSize, Config.Combat.HitboxSize, Config.Combat.HitboxSize)
+                        head.Transparency = 1 -- Make invisible
+                        head.CanCollide = false
+                    end
+                    
+                    -- Expand torso hitbox
+                    local torso = player.Character:FindFirstChild("UpperTorso") or player.Character:FindFirstChild("Torso")
+                    if torso and torso:IsA("BasePart") then
+                        torso.Size = Vector3.new(Config.Combat.HitboxSize, Config.Combat.HitboxSize, Config.Combat.HitboxSize)
+                        torso.Transparency = 1
+                        torso.CanCollide = false
+                    end
+                    
+                    -- Expand HumanoidRootPart
+                    local hrp = player.Character:FindFirstChild("HumanoidRootPart")
+                    if hrp and hrp:IsA("BasePart") then
+                        hrp.Size = Vector3.new(Config.Combat.HitboxSize, Config.Combat.HitboxSize, Config.Combat.HitboxSize)
+                        hrp.Transparency = 1
+                        hrp.CanCollide = false
+                    end
+                end
+            end
+        end
+    end
+end)
+
+-- Silent Aim System (True Silent - No Camera Movement)
+pcall(function()
+    local oldNamecall
+    oldNamecall = hookmetamethod(game, "__namecall", function(self, ...)
+        local args = {...}
+        local method = getnamecallmethod()
+        
+        if Config.Combat.SilentAimEnabled and UI.Active then
+            -- Hook mouse/camera functions for silent aim
+            if method == "FireServer" or method == "InvokeServer" then
+                if tostring(self):find("Remote") then
+                    -- Find closest enemy
+                    local target = Combat:GetClosestPlayer()
+                    if target and target.Character and IsEnemy(target, Config.Combat.TeamCheck) then
+                        local targetPart = target.Character:FindFirstChild(Config.Combat.TargetPart)
+                            or target.Character:FindFirstChild("Head")
+                            or target.Character:FindFirstChild("HumanoidRootPart")
+                        
+                        if targetPart then
+                            -- Replace mouse hit position with target position
+                            for i, arg in pairs(args) do
+                                if typeof(arg) == "Vector3" then
+                                    args[i] = targetPart.Position
+                                elseif typeof(arg) == "CFrame" then
+                                    args[i] = CFrame.new(targetPart.Position)
+                                end
+                            end
+                        end
+                    end
+                end
+            end
+        end
+        
+        return oldNamecall(self, unpack(args))
+    end)
+end)
+
+-- Keybind System (Only works if feature is already enabled in UI)
+UserInputService.InputBegan:Connect(function(input, gameProcessed)
+    if gameProcessed or not UI.Active then return end
+    
+    local keyName = input.KeyCode.Name
+    
+    -- ESP Toggle (only if ESP was enabled in menu first)
+    if keyName == Config.Keybinds.ESPToggle and Config.Visuals.Enabled then
+        Config.Visuals.Enabled = false
+        UI:Notify("ESP: OFF (Press to re-enable)")
+    elseif keyName == Config.Keybinds.ESPToggle and not Config.Visuals.Enabled then
+        -- Try to enable it
+        Config.Visuals.Enabled = true
+        UI:Notify("ESP: ON")
+    end
+    
+    -- Aim Assist Toggle (only if Aim Assist was enabled in menu first)
+    if keyName == Config.Keybinds.AimAssistToggle and Config.Combat.SilentAim then
+        Config.Combat.SilentAim = false
+        UI:Notify("Aim Assist: OFF")
+    elseif keyName == Config.Keybinds.AimAssistToggle and not Config.Combat.SilentAim then
+        Config.Combat.SilentAim = true
+        UI:Notify("Aim Assist: ON")
+    end
+    
+    -- Fly Toggle (only if Fly was enabled in menu first)
+    if keyName == Config.Keybinds.FlyToggle and Config.Physics.Fly then
+        Config.Physics.Fly = false
+        DisableFly()
+        UI:Notify("Fly: OFF")
+    elseif keyName == Config.Keybinds.FlyToggle and not Config.Physics.Fly then
+        Config.Physics.Fly = true
+        EnableFly()
+        UI:Notify("Fly: ON")
+    end
+    
+    -- NoClip Toggle (only if NoClip was enabled in menu first)
+    if keyName == Config.Keybinds.NoClipToggle and Config.Physics.NoClip then
+        Config.Physics.NoClip = false
+        UI:Notify("NoClip: OFF")
+    elseif keyName == Config.Keybinds.NoClipToggle and not Config.Physics.NoClip then
+        Config.Physics.NoClip = true
+        UI:Notify("NoClip: ON")
+    end
+    
+    -- Silent Aim Toggle (only if Silent Aim was enabled in menu first)
+    if keyName == Config.Keybinds.SilentAimToggle and Config.Combat.SilentAimEnabled then
+        Config.Combat.SilentAimEnabled = false
+        UI:Notify("Silent Aim: OFF")
+    elseif keyName == Config.Keybinds.SilentAimToggle and not Config.Combat.SilentAimEnabled then
+        Config.Combat.SilentAimEnabled = true
+        UI:Notify("Silent Aim: ON")
+    end
+end)
+
 -- ESP System
 local Visuals = {}
 local ESPObjects = {} -- Track all ESP objects for cleanup
@@ -1186,6 +1328,111 @@ end
 
 for _, p in pairs(Players:GetPlayers()) do CreateHealthBar(p) end
 Players.PlayerAdded:Connect(function(p) CreateHealthBar(p) end)
+
+-- Skeleton ESP System
+local SkeletonConnections = {}
+
+local function CreateSkeleton(player)
+    if player == LocalPlayer then return end
+    
+    local function setupSkeleton(char)
+        local hrp = char:WaitForChild("HumanoidRootPart", 5)
+        if not hrp then return end
+        
+        -- Define skeleton connections (bones)
+        local bones = {
+            {from = "Head", to = "UpperTorso"},
+            {from = "UpperTorso", to = "LowerTorso"},
+            {from = "UpperTorso", to = "LeftUpperArm"},
+            {from = "LeftUpperArm", to = "LeftLowerArm"},
+            {from = "LeftLowerArm", to = "LeftHand"},
+            {from = "UpperTorso", to = "RightUpperArm"},
+            {from = "RightUpperArm", to = "RightLowerArm"},
+            {from = "RightLowerArm", to = "RightHand"},
+            {from = "LowerTorso", to = "LeftUpperLeg"},
+            {from = "LeftUpperLeg", to = "LeftLowerLeg"},
+            {from = "LeftLowerLeg", to = "LeftFoot"},
+            {from = "LowerTorso", to = "RightUpperLeg"},
+            {from = "RightUpperLeg", to = "RightLowerLeg"},
+            {from = "RightLowerLeg", to = "RightFoot"}
+        }
+        
+        -- R6 fallback bones
+        local r6Bones = {
+            {from = "Head", to = "Torso"},
+            {from = "Torso", to = "Left Arm"},
+            {from = "Torso", to = "Right Arm"},
+            {from = "Torso", to = "Left Leg"},
+            {from = "Torso", to = "Right Leg"}
+        }
+        
+        local lines = {}
+        local connections = {}
+        
+        -- Try R15 first, fallback to R6
+        local boneSet = bones
+        local isR6 = char:FindFirstChild("Torso") ~= nil
+        if isR6 then boneSet = r6Bones end
+        
+        -- Create lines for each bone
+        for _, bone in pairs(boneSet) do
+            local line = Drawing.new("Line")
+            line.Visible = false
+            line.Thickness = 2
+            line.Transparency = 1
+            table.insert(lines, {line = line, from = bone.from, to = bone.to})
+        end
+        
+        local connection = RunService.RenderStepped:Connect(function()
+            if not UI.Active or not char:IsDescendantOf(Workspace) or not hrp.Parent then
+                for _, lineData in pairs(lines) do
+                    lineData.line:Remove()
+                end
+                connection:Disconnect()
+                return
+            end
+            
+            if Config.Visuals.SkeletonESP then
+                -- Check if it's enemy for color
+                local isEnemy = IsEnemy(player, true)
+                local skeletonColor = isEnemy and Color3.fromRGB(255, 80, 80) or Color3.fromRGB(80, 255, 120)
+                
+                for _, lineData in pairs(lines) do
+                    local fromPart = char:FindFirstChild(lineData.from)
+                    local toPart = char:FindFirstChild(lineData.to)
+                    
+                    if fromPart and toPart then
+                        local fromPos, fromVis = Camera:WorldToViewportPoint(fromPart.Position)
+                        local toPos, toVis = Camera:WorldToViewportPoint(toPart.Position)
+                        
+                        if fromVis and toVis then
+                            lineData.line.From = Vector2.new(fromPos.X, fromPos.Y)
+                            lineData.line.To = Vector2.new(toPos.X, toPos.Y)
+                            lineData.line.Color = Color3.new(skeletonColor.R, skeletonColor.G, skeletonColor.B)
+                            lineData.line.Visible = true
+                        else
+                            lineData.line.Visible = false
+                        end
+                    else
+                        lineData.line.Visible = false
+                    end
+                end
+            else
+                for _, lineData in pairs(lines) do
+                    lineData.line.Visible = false
+                end
+            end
+        end)
+        
+        table.insert(SkeletonConnections, {lines = lines, connection = connection})
+    end
+    
+    if player.Character then task.spawn(function() setupSkeleton(player.Character) end) end
+    player.CharacterAdded:Connect(function(char) task.spawn(function() setupSkeleton(char) end) end)
+end
+
+for _, p in pairs(Players:GetPlayers()) do CreateSkeleton(p) end
+Players.PlayerAdded:Connect(function(p) CreateSkeleton(p) end)
 
 -- Box ESP 2D System
 local BoxConnections = {}
@@ -1557,6 +1804,9 @@ UI:CreateSlider(CombatPage, "Rapid Fire Delay (s)", 0.01, 1, "Combat", "RapidFir
 UI:CreateToggle(CombatPage, "No Recoil", "Combat", "NoRecoil")
 UI:CreateToggle(CombatPage, "No Spread", "Combat", "NoSpread")
 UI:CreateToggle(CombatPage, "Auto Reload", "Combat", "AutoReload")
+UI:CreateToggle(CombatPage, "Silent Aim (No Camera)", "Combat", "SilentAimEnabled")
+UI:CreateToggle(CombatPage, "Hitbox Expander", "Combat", "HitboxExpander")
+UI:CreateSlider(CombatPage, "Hitbox Size", 1, 20, "Combat", "HitboxSize")
 UI:CreateToggle(CombatPage, "Kill Aura + Auto Aim", "Combat", "KillAura")
 UI:CreateToggle(CombatPage, "Kill Aura Team Check", "Combat", "KillAuraTeamCheck")
 UI:CreateSlider(CombatPage, "Kill Aura Range", 5, 50, "Combat", "KillAuraRange")
@@ -1567,6 +1817,7 @@ UI:CreateToggle(VisualsPage, "Show Names", "Visuals", "Names")
 UI:CreateToggle(VisualsPage, "Show Distance", "Visuals", "Distance")
 UI:CreateToggle(VisualsPage, "Show IDs", "Visuals", "IDs")
 UI:CreateToggle(VisualsPage, "Head Dot", "Visuals", "HeadDot")
+UI:CreateToggle(VisualsPage, "Skeleton ESP", "Visuals", "SkeletonESP")
 UI:CreateToggle(VisualsPage, "3D Boxes / Chams", "Visuals", "Skeletons")
 UI:CreateToggle(VisualsPage, "Tracers", "Visuals", "Tracers")
 UI:CreateToggle(VisualsPage, "Health Bars", "Visuals", "HealthBars")
@@ -1599,6 +1850,23 @@ UI:CreateToggle(MiscPage, "Anti-AFK", "Misc", "AntiAFK")
 UI:CreateToggle(MiscPage, "Fullbright", "Misc", "Fullbright")
 UI:CreateToggle(MiscPage, "FOV Changer", "Misc", "FOVChanger")
 UI:CreateSlider(MiscPage, "FOV Value", 70, 120, "Misc", "FOVValue")
+
+-- Keybind Configuration
+local KeybindFrame = UI:Create("Frame", {Size = UDim2.new(1, -10, 0, 200), BackgroundColor3 = Color3.fromRGB(22, 18, 32), ZIndex = 4, Parent = MiscPage})
+Instance.new("UICorner", KeybindFrame).CornerRadius = UDim.new(0, 6)
+
+UI:Create("TextLabel", {
+    Size = UDim2.new(1, -20, 0, 25), Position = UDim2.new(0, 10, 0, 5),
+    BackgroundTransparency = 1, Text = "Keybinds (Must enable feature in menu first)",
+    TextColor3 = Config.Visuals.Accent, Font = Enum.Font.GothamBold, TextSize = 12,
+    TextXAlignment = Enum.TextXAlignment.Left, ZIndex = 5, Parent = KeybindFrame
+})
+
+UI:CreateKeybind(MiscPage, "ESP Toggle", "Keybinds", "ESPToggle")
+UI:CreateKeybind(MiscPage, "Aim Assist Toggle", "Keybinds", "AimAssistToggle")
+UI:CreateKeybind(MiscPage, "Fly Toggle", "Keybinds", "FlyToggle")
+UI:CreateKeybind(MiscPage, "NoClip Toggle", "Keybinds", "NoClipToggle")
+UI:CreateKeybind(MiscPage, "Silent Aim Toggle", "Keybinds", "SilentAimToggle")
 
 -- Theme Changer
 local ThemeFrame = UI:Create("Frame", {Size = UDim2.new(1, -10, 0, 70), BackgroundColor3 = Color3.fromRGB(22, 18, 32), ZIndex = 4, Parent = MiscPage})
