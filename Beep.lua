@@ -50,7 +50,9 @@ local Config = {
         TriggerDelay = 0.1,
         AutoShoot = false,
         ShootDelay = 0.15,
-        TeamCheck = true
+        TeamCheck = true,
+        HoldToAim = false,
+        AimHoldKey = "MouseButton2"
     },
     Physics = {
         Speed = 1,
@@ -412,7 +414,7 @@ function UI:CreateKeybind(parent, text, configSection, configKey)
     local KeyButton = UI:Create("TextButton", {
         Size = UDim2.new(0, 70, 0, 24), Position = UDim2.new(1, -80, 0.5, -12),
         BackgroundColor3 = Color3.fromRGB(45, 35, 60),
-        Text = Config[configSection][configKey],
+        Text = Config[configSection][configKey] == "MouseButton2" and "RMB" or Config[configSection][configKey],
         TextColor3 = Color3.new(1,1,1), Font = Enum.Font.GothamBold, TextSize = 11, ZIndex = 5, Parent = Frame
     })
     Instance.new("UICorner", KeyButton).CornerRadius = UDim.new(0, 6)
@@ -429,6 +431,11 @@ function UI:CreateKeybind(parent, text, configSection, configKey)
                 local key = input.KeyCode.Name
                 Config[configSection][configKey] = key
                 KeyButton.Text = key
+                listening = false
+                connection:Disconnect()
+            elseif input.UserInputType == Enum.UserInputType.MouseButton2 then
+                Config[configSection][configKey] = "MouseButton2"
+                KeyButton.Text = "RMB"
                 listening = false
                 connection:Disconnect()
             end
@@ -623,10 +630,36 @@ UserInputService.InputBegan:Connect(function(input, gameProcessed)
 end)
 
 local lastAimShootTime = 0
+local aimHoldActive = false
+
+-- Hold to Aim Input Handler
+UserInputService.InputBegan:Connect(function(input, gameProcessed)
+    if gameProcessed or not UI.Active or not Config.Combat.HoldToAim then return end
+    
+    -- Check if it's the aim hold key
+    if (Config.Combat.AimHoldKey == "MouseButton2" and input.UserInputType == Enum.UserInputType.MouseButton2) or
+       (Config.Combat.AimHoldKey ~= "MouseButton2" and input.KeyCode.Name == Config.Combat.AimHoldKey) then
+        aimHoldActive = true
+    end
+end)
+
+UserInputService.InputEnded:Connect(function(input)
+    if not UI.Active then return end
+    
+    -- Release aim hold key
+    if (Config.Combat.AimHoldKey == "MouseButton2" and input.UserInputType == Enum.UserInputType.MouseButton2) or
+       (Config.Combat.AimHoldKey ~= "MouseButton2" and input.KeyCode.Name == Config.Combat.AimHoldKey) then
+        aimHoldActive = false
+    end
+end)
 
 RunService.RenderStepped:Connect(function()
     if not UI.Active then return end
-    if Config.Combat.SilentAim then
+    
+    -- Only aim if: SilentAim is ON AND (HoldToAim is OFF OR hold key is pressed)
+    local shouldAim = Config.Combat.SilentAim and (not Config.Combat.HoldToAim or aimHoldActive)
+    
+    if shouldAim then
         local target = nil
         
         -- Check if we have a locked target and if it's still valid
@@ -664,37 +697,42 @@ RunService.RenderStepped:Connect(function()
     end
 end)
 
--- Triggerbot System
+-- Triggerbot System (Optimized - No Lag)
 local lastTriggerTime = 0
+local lastTriggerCheck = 0
+local triggerCheckInterval = 0.05 -- Check every 50ms instead of every frame
 
-RunService.RenderStepped:Connect(function()
-    if not UI.Active or not Config.Combat.Triggerbot then return end
-    
-    local currentTime = tick()
-    if currentTime - lastTriggerTime < Config.Combat.TriggerDelay then return end
-    
-    local char = LocalPlayer.Character
-    if not char then return end
-    
-    -- Check if mouse is hovering over an enemy
-    local mouseTarget = Mouse.Target
-    if mouseTarget then
-        local targetPlayer = nil
-        local targetChar = mouseTarget:FindFirstAncestorOfClass("Model")
-        
-        if targetChar then
-            targetPlayer = Players:GetPlayerFromCharacter(targetChar)
-        end
-        
-        if targetPlayer and targetPlayer ~= LocalPlayer then
-            -- Check if it's an enemy
-            if IsEnemy(targetPlayer, Config.Combat.TeamCheck) then
-                -- Check if player is alive
-                local hum = targetChar:FindFirstChildOfClass("Humanoid")
-                if hum and hum.Health > 0 then
-                    -- Shoot
-                    Shoot()
-                    lastTriggerTime = currentTime
+task.spawn(function()
+    while task.wait(0.05) do
+        if UI.Active and Config.Combat.Triggerbot then
+            local currentTime = tick()
+            
+            if currentTime - lastTriggerTime >= Config.Combat.TriggerDelay then
+                local char = LocalPlayer.Character
+                if char then
+                    -- Check if mouse is hovering over an enemy
+                    local mouseTarget = Mouse.Target
+                    if mouseTarget then
+                        local targetPlayer = nil
+                        local targetChar = mouseTarget:FindFirstAncestorOfClass("Model")
+                        
+                        if targetChar then
+                            targetPlayer = Players:GetPlayerFromCharacter(targetChar)
+                        end
+                        
+                        if targetPlayer and targetPlayer ~= LocalPlayer then
+                            -- Check if it's an enemy
+                            if IsEnemy(targetPlayer, Config.Combat.TeamCheck) then
+                                -- Check if player is alive
+                                local hum = targetChar:FindFirstChildOfClass("Humanoid")
+                                if hum and hum.Health > 0 then
+                                    -- Shoot
+                                    Shoot()
+                                    lastTriggerTime = currentTime
+                                end
+                            end
+                        end
+                    end
                 end
             end
         end
@@ -1170,6 +1208,8 @@ local MiscPage = UI:CreateTab("Misc")
 
 -- Combat Controls
 UI:CreateToggle(CombatPage, "Aim Assist", "Combat", "SilentAim")
+UI:CreateToggle(CombatPage, "Hold to Aim", "Combat", "HoldToAim")
+UI:CreateKeybind(CombatPage, "Aim Hold Key", "Combat", "AimHoldKey")
 UI:CreateToggle(CombatPage, "Team Check", "Combat", "TeamCheck")
 UI:CreateSlider(CombatPage, "FOV Radius", 50, 400, "Combat", "FOV")
 UI:CreateSlider(CombatPage, "Smoothness", 1, 10, "Combat", "Smoothness")
