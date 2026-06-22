@@ -1,5 +1,45 @@
 # Beep Framework - Changelog
 
+## Version 2.2.0 (2026-06-21)
+
+### ✨ New Features
+- **Watermark** - Displays FPS, Ping, and Time (toggleable in Misc tab)
+- **Theme Changer** - 6 color themes: Purple, Red, Blue, Green, Yellow, Pink
+- **Remove Fog** - Toggle to remove all fog from the map
+- **Bunny Hop** - Auto-jump when holding space for continuous hopping
+- **Click Teleport** - Hold CTRL + Click to teleport to mouse position
+- **Distance ESP** - Shows distance in meters (always visible with names)
+
+### 🔧 Improvements
+- **Auto Shoot Fixed** - Now uses 3 methods (Tool:Activate, VirtualInputManager, VirtualUser)
+- **Triggerbot Fixed** - Properly releases mouse button after shooting
+- **Better Shoot() Function** - Includes both Button1Down and Button1Up
+- **Config Expanded** - Added settings for all new features
+- **UI Organization** - Better organized tabs with new toggles
+
+### 🐛 Bug Fixes
+- Fixed Auto Shoot not working at all
+- Fixed Triggerbot not releasing mouse button
+- Fixed Watermark visibility toggle
+- Fixed Theme Changer not updating all UI elements
+
+### 📦 Features Added to Config
+- `Config.Misc.Watermark` - Toggle watermark display
+- `Config.Misc.RemoveFog` - Toggle fog removal
+- `Config.Misc.ThemeColor` - Current theme selection (1-6)
+- `Config.Physics.BunnyHop` - Toggle bunny hop
+- `Config.Physics.ClickTP` - Toggle click teleport
+- `Config.Physics.ClickTPKey` - Keybind for click teleport
+- `Config.Visuals.Distance` - Show distance in ESP
+
+### 🎨 UI Improvements
+- Watermark shows: Version, FPS, Ping, Time
+- Theme buttons in Misc tab (6 colors available)
+- All new toggles properly integrated
+- Better color consistency across themes
+
+---
+
 ## Version 2.1.0 (2026-06-21)
 
 ### ✨ New Features

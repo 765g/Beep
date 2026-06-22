@@ -31,11 +31,14 @@ local Config = {
     Visuals = {
         Enabled = false,
         Names = false,
+        Distance = true,
         IDs = false,
         Skeletons = false,
         Tracers = false,
         HealthBars = false,
         BoxESP = false,
+        WeaponESP = false,
+        HeadDot = false,
         Accent = Color3.fromRGB(140, 80, 255)
     },
     Combat = {
@@ -52,7 +55,12 @@ local Config = {
         ShootDelay = 0.15,
         TeamCheck = true,
         HoldToAim = false,
-        AimHoldKey = "MouseButton2"
+        AimHoldKey = "MouseButton2",
+        RapidFire = false,
+        RapidFireDelay = 0.1,
+        NoRecoil = false,
+        NoSpread = false,
+        AutoReload = false
     },
     Physics = {
         Speed = 1,
@@ -63,7 +71,11 @@ local Config = {
         FlyKey = "E",
         SpeedEnabled = false,
         SpeedKey = "LeftControl",
-        JumpEnabled = false
+        JumpEnabled = false,
+        BunnyHop = false,
+        BunnyHopKey = "Space",
+        ClickTP = false,
+        ClickTPKey = "LeftControl"
     },
     Misc = {
         Fullbright = false,
@@ -74,7 +86,20 @@ local Config = {
         KillAuraRange = 20,
         KillAuraTeamCheck = true,
         TeleportPlayer = nil,
-        AntiAFK = false
+        AntiAFK = false,
+        RemoveFog = false,
+        Watermark = true,
+        ThemeColor = 1
+    },
+    UI = {
+        ThemeColors = {
+            Color3.fromRGB(140, 80, 255), -- Purple (default)
+            Color3.fromRGB(255, 80, 80),  -- Red
+            Color3.fromRGB(80, 160, 255), -- Blue
+            Color3.fromRGB(80, 255, 120), -- Green
+            Color3.fromRGB(255, 200, 80), -- Yellow/Orange
+            Color3.fromRGB(255, 80, 200)  -- Pink
+        }
     }
 }
 
@@ -143,6 +168,41 @@ local ProjectLabel = UI:Create("TextLabel", {
     ZIndex = 5,
     Parent = Main
 })
+
+-- Watermark
+local Watermark = UI:Create("TextLabel", {
+    Size = UDim2.new(0, 300, 0, 50),
+    Position = UDim2.new(0, 10, 0, 10),
+    BackgroundColor3 = Color3.fromRGB(12, 10, 18),
+    BackgroundTransparency = 0.3,
+    Text = "Beep v2.2.0 | FPS: 60 | Ping: 0ms",
+    TextColor3 = Color3.new(1, 1, 1),
+    Font = Enum.Font.GothamBold,
+    TextSize = 12,
+    TextXAlignment = Enum.TextXAlignment.Left,
+    TextYAlignment = Enum.TextYAlignment.Top,
+    ZIndex = 100,
+    Visible = Config.Misc.Watermark,
+    Parent = UI.Screen
+})
+UI:Create("UIPadding", {PaddingLeft = UDim.new(0, 10), PaddingTop = UDim.new(0, 10), Parent = Watermark})
+Instance.new("UICorner", Watermark).CornerRadius = UDim.new(0, 8)
+UI:Create("UIStroke", {Color = Config.Visuals.Accent, Thickness = 1, Transparency = 0.5, Parent = Watermark})
+
+-- Update Watermark
+task.spawn(function()
+    while task.wait(1) do
+        if UI.Active and Config.Misc.Watermark then
+            local fps = math.floor(1 / RunService.RenderStepped:Wait())
+            local ping = math.floor(game:GetService("Stats").Network.ServerStatsItem["Data Ping"]:GetValue())
+            local time = os.date("%H:%M:%S")
+            Watermark.Text = string.format("Beep v2.2.0 | FPS: %d | Ping: %dms | %s", fps, ping, time)
+            Watermark.Visible = Config.Misc.Watermark
+        else
+            Watermark.Visible = false
+        end
+    end
+end)
 
 -- Close Button
 local CloseMenuBtn = UI:Create("TextButton", {
@@ -547,19 +607,36 @@ end
 
 -- Universal Shooting Function (Maximum Performance)
 local VirtualUser = game:GetService("VirtualUser")
+local VirtualInputManager = game:GetService("VirtualInputManager")
+
 local function Shoot()
-    local char = LocalPlayer.Character
-    if not char then return end
-    
-    -- Method 1: Tool Activation (fastest and most reliable)
-    local tool = char:FindFirstChildOfClass("Tool")
-    if tool then
-        tool:Activate()
-        return
-    end
-    
-    -- Method 2: VirtualUser (lightweight alternative)
-    VirtualUser:Button1Down(Vector2.new(0, 0))
+    task.spawn(function()
+        local char = LocalPlayer.Character
+        if not char then return end
+        
+        -- Method 1: Tool Activation (fastest and most reliable)
+        local tool = char:FindFirstChildOfClass("Tool")
+        if tool and tool:FindFirstChild("Handle") then
+            tool:Activate()
+            task.wait(0.05)
+            tool:Deactivate()
+            return
+        end
+        
+        -- Method 2: VirtualInputManager (most compatible)
+        pcall(function()
+            VirtualInputManager:SendMouseButtonEvent(0, 0, 0, true, game, 0)
+            task.wait(0.05)
+            VirtualInputManager:SendMouseButtonEvent(0, 0, 0, false, game, 0)
+        end)
+        
+        -- Method 3: VirtualUser fallback
+        pcall(function()
+            VirtualUser:Button1Down(Vector2.new(0, 0))
+            task.wait(0.05)
+            VirtualUser:Button1Up(Vector2.new(0, 0))
+        end)
+    end)
 end
 
 -- Universal Team Detection System
@@ -996,12 +1073,13 @@ end
 for _, p in pairs(Players:GetPlayers()) do CreateBox2D(p) end
 Players.PlayerAdded:Connect(function(p) CreateBox2D(p) end)
 
--- Fullbright System
+-- Fullbright & Remove Fog System
 local Lighting = game:GetService("Lighting")
 local originalLighting = {
     Brightness = Lighting.Brightness,
     ClockTime = Lighting.ClockTime,
     FogEnd = Lighting.FogEnd,
+    FogStart = Lighting.FogStart,
     GlobalShadows = Lighting.GlobalShadows,
     Ambient = Lighting.Ambient
 }
@@ -1010,15 +1088,24 @@ RunService.RenderStepped:Connect(function()
     if Config.Misc.Fullbright and UI.Active then
         Lighting.Brightness = 2
         Lighting.ClockTime = 12
-        Lighting.FogEnd = 100000
         Lighting.GlobalShadows = false
         Lighting.Ambient = Color3.new(1, 1, 1)
     else
         Lighting.Brightness = originalLighting.Brightness
         Lighting.ClockTime = originalLighting.ClockTime
-        Lighting.FogEnd = originalLighting.FogEnd
         Lighting.GlobalShadows = originalLighting.GlobalShadows
         Lighting.Ambient = originalLighting.Ambient
+    end
+    
+    -- Remove Fog
+    if Config.Misc.RemoveFog and UI.Active then
+        Lighting.FogEnd = 100000
+        Lighting.FogStart = 0
+    else
+        if not Config.Misc.Fullbright then
+            Lighting.FogEnd = originalLighting.FogEnd
+            Lighting.FogStart = originalLighting.FogStart
+        end
     end
 end)
 
@@ -1042,6 +1129,36 @@ InfiniteJumpConnection = UserInputService.InputBegan:Connect(function(input, gam
             hum:ChangeState(Enum.HumanoidStateType.Jumping)
         end
     end
+end)
+
+-- Bunny Hop System
+RunService.Heartbeat:Connect(function()
+    if not UI.Active or not Config.Physics.BunnyHop then return end
+    local char = LocalPlayer.Character
+    if not char then return end
+    local hum = char:FindFirstChildOfClass("Humanoid")
+    if not hum then return end
+    
+    if UserInputService:IsKeyDown(Enum.KeyCode[Config.Physics.BunnyHopKey]) or UserInputService:IsKeyDown(Enum.KeyCode.Space) then
+        if hum:GetState() ~= Enum.HumanoidStateType.Freefall and hum:GetState() ~= Enum.HumanoidStateType.Flying then
+            hum:ChangeState(Enum.HumanoidStateType.Jumping)
+        end
+    end
+end)
+
+-- Click Teleport System
+Mouse.Button1Down:Connect(function()
+    if not UI.Active or not Config.Physics.ClickTP then return end
+    if not UserInputService:IsKeyDown(Enum.KeyCode[Config.Physics.ClickTPKey]) then return end
+    
+    local char = LocalPlayer.Character
+    if not char then return end
+    local rootPart = char:FindFirstChild("HumanoidRootPart")
+    if not rootPart then return end
+    
+    local targetPos = Mouse.Hit.Position
+    rootPart.CFrame = CFrame.new(targetPos + Vector3.new(0, 3, 0))
+    UI:Notify("Teleported to position")
 end)
 
 -- Kill Aura System (Optimized - with Auto Aim + Auto Shoot + Team Check)
@@ -1250,11 +1367,19 @@ UI:CreateToggle(CombatPage, "Auto Shoot (Locked Target)", "Combat", "AutoShoot")
 UI:CreateSlider(CombatPage, "Auto Shoot Delay (s)", 0, 1, "Combat", "ShootDelay")
 UI:CreateToggle(CombatPage, "Triggerbot", "Combat", "Triggerbot")
 UI:CreateSlider(CombatPage, "Trigger Delay (s)", 0, 1, "Combat", "TriggerDelay")
+UI:CreateToggle(CombatPage, "Rapid Fire", "Combat", "RapidFire")
+UI:CreateSlider(CombatPage, "Rapid Fire Delay (s)", 0.01, 1, "Combat", "RapidFireDelay")
+UI:CreateToggle(CombatPage, "No Recoil", "Combat", "NoRecoil")
+UI:CreateToggle(CombatPage, "No Spread", "Combat", "NoSpread")
+UI:CreateToggle(CombatPage, "Auto Reload", "Combat", "AutoReload")
 
 -- Visual Controls
 UI:CreateToggle(VisualsPage, "Enable ESP", "Visuals", "Enabled")
 UI:CreateToggle(VisualsPage, "Show Names", "Visuals", "Names")
+UI:CreateToggle(VisualsPage, "Show Distance", "Visuals", "Distance")
 UI:CreateToggle(VisualsPage, "Show IDs", "Visuals", "IDs")
+UI:CreateToggle(VisualsPage, "Show Weapon", "Visuals", "WeaponESP")
+UI:CreateToggle(VisualsPage, "Head Dot", "Visuals", "HeadDot")
 UI:CreateToggle(VisualsPage, "3D Boxes / Chams", "Visuals", "Skeletons")
 UI:CreateToggle(VisualsPage, "Tracers", "Visuals", "Tracers")
 UI:CreateToggle(VisualsPage, "Health Bars", "Visuals", "HealthBars")
@@ -1266,6 +1391,9 @@ UI:CreateSlider(PhysicsPage, "Speed Multiplier", 1, 5, "Physics", "Speed")
 UI:CreateKeybind(PhysicsPage, "Speed Toggle Key", "Physics", "SpeedKey")
 UI:CreateToggle(PhysicsPage, "Enable Jump Boost", "Physics", "JumpEnabled")
 UI:CreateSlider(PhysicsPage, "Jump Power", 50, 300, "Physics", "JumpPower")
+UI:CreateToggle(PhysicsPage, "Bunny Hop", "Physics", "BunnyHop")
+UI:CreateToggle(PhysicsPage, "Click Teleport", "Physics", "ClickTP")
+UI:CreateKeybind(PhysicsPage, "Click TP Key", "Physics", "ClickTPKey")
 UI:CreateToggle(PhysicsPage, "NoClip", "Physics", "NoClip")
 UI:CreateToggle(PhysicsPage, "Fly Mode", "Physics", "Fly", function(state)
     if state then
@@ -1278,6 +1406,8 @@ UI:CreateSlider(PhysicsPage, "Fly Speed", 10, 500, "Physics", "FlySpeed")
 UI:CreateKeybind(PhysicsPage, "Fly Toggle Key", "Physics", "FlyKey")
 
 -- Misc Controls
+UI:CreateToggle(MiscPage, "Watermark", "Misc", "Watermark")
+UI:CreateToggle(MiscPage, "Remove Fog", "Misc", "RemoveFog")
 UI:CreateToggle(MiscPage, "Anti-AFK", "Misc", "AntiAFK")
 UI:CreateToggle(MiscPage, "Fullbright", "Misc", "Fullbright")
 UI:CreateToggle(MiscPage, "Infinite Jump", "Misc", "InfiniteJump")
@@ -1286,6 +1416,52 @@ UI:CreateSlider(MiscPage, "FOV Value", 70, 120, "Misc", "FOVValue")
 UI:CreateToggle(MiscPage, "Kill Aura + Auto Aim", "Misc", "KillAura")
 UI:CreateToggle(MiscPage, "Kill Aura Team Check", "Misc", "KillAuraTeamCheck")
 UI:CreateSlider(MiscPage, "Kill Aura Range", 5, 50, "Misc", "KillAuraRange")
+
+-- Theme Changer
+local ThemeFrame = UI:Create("Frame", {Size = UDim2.new(1, -10, 0, 70), BackgroundColor3 = Color3.fromRGB(22, 18, 32), ZIndex = 4, Parent = MiscPage})
+Instance.new("UICorner", ThemeFrame).CornerRadius = UDim.new(0, 6)
+
+UI:Create("TextLabel", {
+    Size = UDim2.new(1, -20, 0, 25), Position = UDim2.new(0, 10, 0, 5),
+    BackgroundTransparency = 1, Text = "Theme Color",
+    TextColor3 = Color3.new(1,1,1), Font = Enum.Font.GothamBold, TextSize = 13,
+    TextXAlignment = Enum.TextXAlignment.Left, ZIndex = 5, Parent = ThemeFrame
+})
+
+local ThemeContainer = UI:Create("Frame", {
+    Size = UDim2.new(1, -20, 0, 30), Position = UDim2.new(0, 10, 0, 35),
+    BackgroundTransparency = 1, ZIndex = 5, Parent = ThemeFrame
+})
+
+local themeNames = {"Purple", "Red", "Blue", "Green", "Yellow", "Pink"}
+for i, color in ipairs(Config.UI.ThemeColors) do
+    local ThemeBtn = UI:Create("TextButton", {
+        Size = UDim2.new(0, 70, 0, 30),
+        Position = UDim2.new(0, (i-1) * 75, 0, 0),
+        BackgroundColor3 = color,
+        Text = themeNames[i],
+        TextColor3 = Color3.new(1,1,1),
+        Font = Enum.Font.GothamBold,
+        TextSize = 10,
+        ZIndex = 6,
+        Parent = ThemeContainer
+    })
+    Instance.new("UICorner", ThemeBtn).CornerRadius = UDim.new(0, 6)
+    
+    ThemeBtn.MouseButton1Click:Connect(function()
+        Config.Misc.ThemeColor = i
+        Config.Visuals.Accent = color
+        -- Update all UI elements with new color
+        MainStroke.Color = color
+        ProjectLabel.TextColor3 = color
+        FOVStroke.Color = color
+        if Watermark then
+            local stroke = Watermark:FindFirstChildOfClass("UIStroke")
+            if stroke then stroke.Color = color end
+        end
+        UI:Notify("Theme changed to " .. themeNames[i])
+    end)
+end
 
 -- Teleport to Player Section
 local TeleportFrame = UI:Create("Frame", {Size = UDim2.new(1, -10, 0, 90), BackgroundColor3 = Color3.fromRGB(22, 18, 32), ZIndex = 4, Parent = MiscPage})
