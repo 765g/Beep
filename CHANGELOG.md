@@ -1,5 +1,23 @@
 # Beep Framework - Changelog
 
+## Version 3.4.2 (2026-06-22) - RAGEBOT NOCLIP + PANIC KEY
+
+### 🧱 Ragebot NoClip (atraviesa obstáculos)
+- **Ragebot NoClip (pass walls)** - toggle (ON por defecto)
+- Desactiva colisiones de tu personaje mientras el ragebot está activo, para atravesar obstáculos al moverte hacia el enemigo
+- **Restaura las colisiones automáticamente** al apagar el ragebot (no te caes del mapa)
+
+### 🛑 PANIC KEY (arregla la UI trabada)
+- **PANIC Key (stop all)** - tecla configurable (por defecto: **End**)
+- Apaga AL INSTANTE: Ragebot, Auto Shoot, Auto TP, Kill Aura, Aim Assist, Triggerbot, Speed, Fly, NoClip
+- **Funciona aunque el menú de Roblox (Escape) o el chat estén abiertos** (ignora gameProcessed a propósito)
+- Soluciona el problema de "no puedo parar las cosas cuando abro un menú y los toggles no responden"
+
+### 💡 POR QUÉ PASABA EL BUG
+Cuando abres el menú de Roblox o el chat, Roblox marca los inputs como "gameProcessed" y los keybinds normales del cheat dejan de responder. El Panic Key ignora eso, así siempre puedes parar todo con una tecla.
+
+---
+
 ## Version 3.4.1 (2026-06-22) - RAGEBOT AUTO TP / FLY
 
 ### 🚀 NUEVO: Ragebot se mueve hacia el enemigo

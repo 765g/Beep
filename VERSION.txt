@@ -1,6 +1,15 @@
-Beep Framework v3.4.1
+Beep Framework v3.4.2
 Release Date: June 22, 2026
-Build: Stable - RAGEBOT AUTO TP / FLY
+Build: Stable - RAGEBOT NOCLIP + PANIC KEY
+
+==============================================
+v3.4.2 - RAGEBOT NOCLIP + PANIC KEY
+==============================================
+🧱 Ragebot NoClip (pass walls): atraviesa obstaculos al moverte al enemigo
+   - Restaura colisiones al apagar (no te caes del mapa)
+🛑 PANIC Key (default: End): apaga TODO al instante
+   - Funciona aunque tengas el menu de Roblox o el chat abierto
+   - Arregla el bug de "no puedo parar las cosas / toggles no responden"
 
 ==============================================
 v3.4.1 - RAGEBOT AUTO TP / FLY
