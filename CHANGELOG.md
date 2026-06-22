@@ -1,5 +1,20 @@
 # Beep Framework - Changelog
 
+## Version 3.4.3 (2026-06-22) - FIX: UI SE TRABABA (drag pegado)
+
+### 🐛 ARREGLADO: la UI entera se trababa y no se podía clickear nada
+**Causa:** el sistema de arrastre usaba `input.Changed` para detectar cuándo soltabas el clic. Eso falla seguido (al abrir el menú de Roblox, alt-tab, o soltar rápido), dejando `dragToggle = true` pegado. Resultado: el menú perseguía tu cursor con un tween cada vez que movías el mouse, así que NUNCA podías aterrizar en un botón (ni la X, ni minimizar, ni los toggles).
+
+**Solución:**
+- Ahora usa `UserInputService.InputEnded` global, que SIEMPRE detecta cuando sueltas el clic → el drag nunca se queda pegado
+- La posición se actualiza directa (sin tween que se pelea consigo mismo)
+- Mismo fix aplicado al arrastre del Watermark
+- `DisplayOrder = 999999` en el ScreenGui para quedar siempre por encima de las GUIs del juego
+
+Ahora la UI responde siempre, sin importar si abriste el menú de Roblox o el chat.
+
+---
+
 ## Version 3.4.2 (2026-06-22) - RAGEBOT NOCLIP + PANIC KEY
 
 ### 🧱 Ragebot NoClip (atraviesa obstáculos)

@@ -1,6 +1,17 @@
-Beep Framework v3.4.2
+Beep Framework v3.4.3
 Release Date: June 22, 2026
-Build: Stable - RAGEBOT NOCLIP + PANIC KEY
+Build: Stable - FIX UI TRABADA (drag pegado)
+
+==============================================
+v3.4.3 - FIX: UI SE TRABABA
+==============================================
+🐛 Arreglado: la UI entera se trababa, no se podia clickear nada (ni X, ni minimizar, ni toggles)
+Causa: el drag usaba input.Changed que falla al soltar -> dragToggle pegado -> el menu perseguia el cursor
+Solucion:
+- UserInputService.InputEnded global (siempre detecta cuando sueltas)
+- Posicion directa (sin tween peleandose)
+- Mismo fix en el Watermark
+- DisplayOrder 999999 (UI siempre encima de las GUIs del juego)
 
 ==============================================
 v3.4.2 - RAGEBOT NOCLIP + PANIC KEY
