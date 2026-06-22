@@ -40,7 +40,9 @@ local Config = {
         FOV = 150,
         Smoothness = 0.5,
         TargetPart = "Head",
-        ShowFOV = true
+        ShowFOV = true,
+        LockKey = "Q",
+        LockedTarget = nil
     },
     Physics = {
         Speed = 1,
@@ -137,6 +139,16 @@ Instance.new("UICorner", CloseMenuBtn).CornerRadius = UDim.new(0, 6)
 CloseMenuBtn.MouseButton1Click:Connect(function()
     UI.Active = false
     Config.Physics.Fly = false
+    Config.Combat.LockedTarget = nil
+    
+    -- Clean up all ESP objects
+    for _, obj in pairs(ESPObjects) do
+        if obj and obj.Parent then
+            obj:Destroy()
+        end
+    end
+    ESPObjects = {}
+    
     UI.Screen:Destroy()
 end)
 
@@ -407,10 +419,61 @@ function Combat:GetClosestPlayer()
     return closest
 end
 
+function Combat:IsTargetValid(target)
+    if not target or not target.Character then return false end
+    local hum = target.Character:FindFirstChildOfClass("Humanoid")
+    if not hum or hum.Health <= 0 then return false end
+    
+    local part = target.Character:FindFirstChild(Config.Combat.TargetPart) or target.Character:FindFirstChildOfClass("MeshPart") or target.Character:FindFirstChild("HumanoidRootPart")
+    if not part then return false end
+    
+    local screenPos, onScreen = Camera:WorldToViewportPoint(part.Position)
+    if not onScreen then return false end
+    
+    local mousePos = Vector2.new(Mouse.X, Mouse.Y)
+    local targetPos = Vector2.new(screenPos.X, screenPos.Y)
+    local distance = (mousePos - targetPos).Magnitude
+    
+    return distance <= Config.Combat.FOV
+end
+
+-- Lock/Unlock Target System
+UserInputService.InputBegan:Connect(function(input, gameProcessed)
+    if not UI.Active or gameProcessed then return end
+    if input.KeyCode.Name == Config.Combat.LockKey then
+        if Config.Combat.LockedTarget then
+            Config.Combat.LockedTarget = nil
+            UI:Notify("Target Unlocked")
+        else
+            local target = Combat:GetClosestPlayer()
+            if target then
+                Config.Combat.LockedTarget = target
+                UI:Notify("Target Locked: " .. target.DisplayName)
+            else
+                UI:Notify("No target in FOV")
+            end
+        end
+    end
+end)
+
 RunService.RenderStepped:Connect(function()
     if not UI.Active then return end
     if Config.Combat.SilentAim then
-        local target = Combat:GetClosestPlayer()
+        local target = nil
+        
+        -- Check if we have a locked target and if it's still valid
+        if Config.Combat.LockedTarget then
+            if Combat:IsTargetValid(Config.Combat.LockedTarget) then
+                target = Config.Combat.LockedTarget
+            else
+                Config.Combat.LockedTarget = nil
+                UI:Notify("Target Lost")
+            end
+        else
+            -- No locked target, get closest player
+            target = Combat:GetClosestPlayer()
+        end
+        
         if target and target.Character then
             local targetPart = target.Character:FindFirstChild(Config.Combat.TargetPart) or target.Character:FindFirstChildOfClass("MeshPart") or target.Character:FindFirstChild("HumanoidRootPart")
             if targetPart then
@@ -423,6 +486,8 @@ end)
 
 -- ESP System
 local Visuals = {}
+local ESPObjects = {} -- Track all ESP objects for cleanup
+
 local function apply3DChams(part)
     local box = Instance.new("BoxHandleAdornment")
     box.Size = part.Size + Vector3.new(0.05, 0.05, 0.05)
@@ -433,6 +498,7 @@ local function apply3DChams(part)
     box.Adornee = part
     box.Parent = part
     box.Visible = false
+    table.insert(ESPObjects, box)
     return box
 end
 
@@ -445,6 +511,8 @@ function Visuals:DrawESPOnCharacter(player)
         
         local bGui = UI:Create("BillboardGui", {Size = UDim2.new(0, 150, 0, 40), StudsOffset = Vector3.new(0, 3, 0), AlwaysOnTop = true, ResetOnSpawn = true, Enabled = false, Parent = head})
         local label = UI:Create("TextLabel", {Size = UDim2.new(1, 0, 1, 0), BackgroundTransparency = 1, TextColor3 = Color3.new(1, 1, 1), Font = Enum.Font.GothamBold, TextSize = 11, TextStrokeTransparency = 0.5, Text = "", Parent = bGui})
+        
+        table.insert(ESPObjects, bGui)
         
         local trackingParts = {}
         local function scanParts(rootPart)
@@ -605,6 +673,7 @@ UI:CreateToggle(CombatPage, "Aim Assist", "Combat", "SilentAim")
 UI:CreateSlider(CombatPage, "FOV Radius", 50, 400, "Combat", "FOV")
 UI:CreateSlider(CombatPage, "Smoothness", 1, 10, "Combat", "Smoothness")
 UI:CreateToggle(CombatPage, "Show FOV Circle", "Combat", "ShowFOV")
+UI:CreateKeybind(CombatPage, "Lock/Unlock Target", "Combat", "LockKey")
 
 -- Visual Controls
 UI:CreateToggle(VisualsPage, "Enable ESP", "Visuals", "Enabled")
