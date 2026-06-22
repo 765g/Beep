@@ -1,6 +1,150 @@
-Beep Framework v3.6.4
+Beep Framework v3.6.5
 Release Date: June 22, 2026
-Build: Stable - VOID FILTER ADDED
+Build: Stable - TARGET QUEUE ADDED
+
+==============================================
+v3.6.5 - RAGEBOT TARGET QUEUE (KILL ALL)
+==============================================
+🎯 NUEVA FEATURE: Target Queue - Mata a TODOS los enemigos del mapa secuencialmente
+
+**Qué hace:**
+- Crea una lista (queue) de TODOS los enemigos válidos del mapa
+- Va a cada uno, uno por uno, matándolos secuencialmente
+- Cuando mata uno, automáticamente pasa al siguiente
+- Repite hasta matar a TODOS
+
+**Cómo funciona:**
+1. Escanea el mapa → encuentra TODOS los enemigos válidos
+2. Los ordena por distancia (más cercano primero)
+3. Apunta al #1 → mata
+4. Espera delay configurable (0-2s)
+5. Apunta al #2 → mata
+6. Repite hasta matar a TODOS
+7. Refresh queue cada 2 segundos
+
+**Toggles:**
+- "Ragebot Target Queue (kill all enemies)" - ON/OFF
+- "Ragebot Queue Delay (s)" - Delay entre targets (0-2s, default: 0.5s)
+
+---
+
+### 🔥 USO RECOMENDADO:
+
+**Config para MATAR A TODOS:**
+```
+✅ Ragebot (Enable)
+✅ Triggerbot (para auto-shoot)
+✅ Ragebot Target Queue (kill all enemies)  ← NUEVO!
+✅ Ragebot Full Map
+✅ Ragebot Auto TP/Fly (optional - para ir a cada uno)
+✅ Ragebot NoClip
+✅ Ragebot Face Target
+Queue Delay: 0.5s
+```
+
+**Resultado:**
+1. Ragebot encuentra TODOS los enemigos
+2. Va al más cercano → mata
+3. Va al siguiente → mata
+4. Repeat hasta que NO QUEDAN ENEMIGOS
+5. = TEAM WIPE!
+
+---
+
+### ⚙️ DIFERENCIA CON MODO NORMAL:
+
+**Modo Normal (Target Queue OFF):**
+- Siempre apunta al "mejor" target según modo (Closest/Lowest HP/Crosshair)
+- Puede cambiar de target antes de matar
+- Más "caótico"
+
+**Modo Queue (Target Queue ON):**
+- Apunta a UNO hasta matarlo
+- NO cambia de target hasta que el actual muera
+- Pasa al siguiente en la lista
+- Más "metódico" y eficiente
+- Garantiza que mates a TODOS
+
+---
+
+### 📊 NOTIFICACIONES:
+
+Cuando cambia de target en la queue:
+```
+🎯 Queue: Target 1/5
+🎯 Queue: Target 2/5
+🎯 Queue: Target 3/5
+...
+```
+
+Cuando termina la queue:
+- Auto-refresh → busca nuevos enemigos
+- Si hay más → continúa
+- Si no hay → espera
+
+---
+
+### 🎮 CASOS DE USO:
+
+**1. Team Wipe (matar a todos):**
+```
+✅ Target Queue
+✅ Full Map
+✅ Auto TP/Fly
+= Recorres el mapa matando a TODOS
+```
+
+**2. Clear Zone (limpiar zona):**
+```
+✅ Target Queue
+❌ Full Map (OFF - solo en pantalla)
+❌ Auto TP/Fly (OFF - te quedas donde estás)
+= Matas a todos los que ves
+```
+
+**3. Farming Kills:**
+```
+✅ Target Queue
+✅ Auto TP/Fly
+Delay: 0.2s (rápido)
+= Farm kills ultra-rápido
+```
+
+---
+
+### ⚠️ ADVERTENCIAS:
+
+- **MUY OBVIO** - Es extremadamente detectable
+- **Ban rápido** - Anti-cheat te detecta fácil
+- **Solo para tests** - No usar en cuenta principal
+- **Requiere Triggerbot** - Para auto-shoot
+
+---
+
+### 🔧 TÉCNICO:
+
+```lua
+-- Build queue with all enemies
+function RefreshTargetQueue()
+    for each enemy do
+        if valid then
+            add to queue
+        end
+    end
+    sort by distance (closest first)
+end
+
+-- Get current target from queue
+function GetQueueTarget()
+    if current target dead then
+        wait delay
+        move to next in queue
+    end
+    return current target
+end
+```
+
+---
 
 ==============================================
 v3.6.4 - IGNORE PLAYERS IN VOID
