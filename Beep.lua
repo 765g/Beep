@@ -479,6 +479,45 @@ function Combat:IsTargetValid(target)
     return distance <= Config.Combat.FOV
 end
 
+-- Universal Shooting Function
+local function Shoot()
+    local char = LocalPlayer.Character
+    if not char then return end
+    
+    -- Method 1: Tool Activation (works in most games)
+    local tool = char:FindFirstChildOfClass("Tool")
+    if tool then
+        tool:Activate()
+    end
+    
+    -- Method 2: Mouse click simulation (for executors with mouse functions)
+    if mouse1press and mouse1release then
+        task.spawn(function()
+            mouse1press()
+            task.wait(0.05)
+            mouse1release()
+        end)
+    end
+    
+    -- Method 3: VirtualInputManager (alternative method)
+    pcall(function()
+        local VIM = game:GetService("VirtualInputManager")
+        VIM:SendMouseButtonEvent(0, 0, 0, true, game, 1)
+        task.wait(0.05)
+        VIM:SendMouseButtonEvent(0, 0, 0, false, game, 1)
+    end)
+    
+    -- Method 4: Remote event firing (game-specific, won't break if not present)
+    pcall(function()
+        local remotes = char:GetDescendants()
+        for _, remote in pairs(remotes) do
+            if remote:IsA("RemoteEvent") and (remote.Name:lower():find("shoot") or remote.Name:lower():find("fire") or remote.Name:lower():find("attack")) then
+                remote:FireServer()
+            end
+        end
+    end)
+end
+
 -- Universal Team Detection System
 local function IsEnemy(player, useTeamCheck)
     if player == LocalPlayer then return false end
@@ -598,16 +637,8 @@ RunService.RenderStepped:Connect(function()
                     if Config.Combat.AutoShoot and Config.Combat.LockedTarget then
                         local currentTime = tick()
                         if currentTime - lastAimShootTime >= Config.Combat.ShootDelay then
-                            local char = LocalPlayer.Character
-                            local tool = char and char:FindFirstChildOfClass("Tool")
-                            if tool then
-                                task.spawn(function()
-                                    mouse1press()
-                                    task.wait(0.05)
-                                    mouse1release()
-                                end)
-                                lastAimShootTime = currentTime
-                            end
+                            Shoot()
+                            lastAimShootTime = currentTime
                         end
                     end
                 end
@@ -645,15 +676,8 @@ RunService.RenderStepped:Connect(function()
                 local hum = targetChar:FindFirstChildOfClass("Humanoid")
                 if hum and hum.Health > 0 then
                     -- Shoot
-                    local tool = char:FindFirstChildOfClass("Tool")
-                    if tool then
-                        task.spawn(function()
-                            mouse1press()
-                            task.wait(0.05)
-                            mouse1release()
-                        end)
-                        lastTriggerTime = currentTime
-                    end
+                    Shoot()
+                    lastTriggerTime = currentTime
                 end
             end
         end
@@ -979,18 +1003,8 @@ RunService.Heartbeat:Connect(function()
             -- Auto shoot with delay
             local currentTime = tick()
             if currentTime - lastShootTime >= shootDelay then
-                local tool = char:FindFirstChildOfClass("Tool")
-                if tool then
-                    tool:Activate()
-                    lastShootTime = currentTime
-                    
-                    -- Also try to click (for gun games)
-                    task.spawn(function()
-                        mouse1press()
-                        task.wait(0.05)
-                        mouse1release()
-                    end)
-                end
+                Shoot()
+                lastShootTime = currentTime
             end
         end
     end
