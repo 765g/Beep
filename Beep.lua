@@ -47,7 +47,10 @@ local Config = {
         LockKey = "Q",
         LockedTarget = nil,
         Triggerbot = false,
-        TriggerDelay = 0.1
+        TriggerDelay = 0.1,
+        AutoShoot = false,
+        ShootDelay = 0.15,
+        TeamCheck = true
     },
     Physics = {
         Speed = 1,
@@ -67,6 +70,7 @@ local Config = {
         FOVValue = 70,
         KillAura = false,
         KillAuraRange = 20,
+        KillAuraTeamCheck = true,
         TeleportPlayer = nil,
         AntiAFK = false
     }
@@ -475,6 +479,61 @@ function Combat:IsTargetValid(target)
     return distance <= Config.Combat.FOV
 end
 
+-- Universal Team Detection System
+local function IsEnemy(player, useTeamCheck)
+    if player == LocalPlayer then return false end
+    
+    -- If team check is disabled, everyone is an enemy
+    if not useTeamCheck then return true end
+    
+    -- Method 1: Check Roblox Teams
+    if LocalPlayer.Team and player.Team then
+        return LocalPlayer.Team ~= player.Team
+    end
+    
+    -- Method 2: Check for common team indicators in character
+    local myChar = LocalPlayer.Character
+    local theirChar = player.Character
+    if myChar and theirChar then
+        -- Check for team-colored parts (common in many games)
+        local myTeamPart = myChar:FindFirstChild("TeamColor") or myChar:FindFirstChild("Team")
+        local theirTeamPart = theirChar:FindFirstChild("TeamColor") or theirChar:FindFirstChild("Team")
+        
+        if myTeamPart and theirTeamPart then
+            if myTeamPart:IsA("StringValue") or myTeamPart:IsA("IntValue") then
+                return myTeamPart.Value ~= theirTeamPart.Value
+            end
+        end
+    end
+    
+    -- Method 3: Check player attributes (used in some games)
+    local myTeamAttr = LocalPlayer:GetAttribute("Team") or LocalPlayer:GetAttribute("TeamID")
+    local theirTeamAttr = player:GetAttribute("Team") or player:GetAttribute("TeamID")
+    if myTeamAttr and theirTeamAttr then
+        return myTeamAttr ~= theirTeamAttr
+    end
+    
+    -- Method 4: Check character name color (some games use this)
+    if myChar and theirChar then
+        local myHead = myChar:FindFirstChild("Head")
+        local theirHead = theirChar:FindFirstChild("Head")
+        if myHead and theirHead then
+            local myNameTag = myHead:FindFirstChildOfClass("BillboardGui")
+            local theirNameTag = theirHead:FindFirstChildOfClass("BillboardGui")
+            if myNameTag and theirNameTag then
+                local myLabel = myNameTag:FindFirstChildOfClass("TextLabel")
+                local theirLabel = theirNameTag:FindFirstChildOfClass("TextLabel")
+                if myLabel and theirLabel then
+                    return myLabel.TextColor3 ~= theirLabel.TextColor3
+                end
+            end
+        end
+    end
+    
+    -- Default: If no team system detected, everyone is enemy
+    return true
+end
+
 -- Lock/Unlock Target System
 UserInputService.InputBegan:Connect(function(input, gameProcessed)
     if not UI.Active or gameProcessed then return end
@@ -487,6 +546,11 @@ UserInputService.InputBegan:Connect(function(input, gameProcessed)
         else
             local target = Combat:GetClosestPlayer()
             if target then
+                -- Check if it's an enemy before locking
+                if not IsEnemy(target, Config.Combat.TeamCheck) then
+                    UI:Notify("Cannot lock teammate")
+                    return
+                end
                 Config.Combat.LockedTarget = target
                 UI:Notify("Target Locked: " .. target.DisplayName)
             else
@@ -501,6 +565,8 @@ UserInputService.InputBegan:Connect(function(input, gameProcessed)
         UI:Notify(Config.Physics.SpeedEnabled and "Speed Hack: ON" or "Speed Hack: OFF")
     end
 end)
+
+local lastAimShootTime = 0
 
 RunService.RenderStepped:Connect(function()
     if not UI.Active then return end
@@ -521,10 +587,30 @@ RunService.RenderStepped:Connect(function()
         end
         
         if target and target.Character then
-            local targetPart = target.Character:FindFirstChild(Config.Combat.TargetPart) or target.Character:FindFirstChildOfClass("MeshPart") or target.Character:FindFirstChild("HumanoidRootPart")
-            if targetPart then
-                local targetCFrame = CFrame.new(Camera.CFrame.Position, targetPart.Position)
-                Camera.CFrame = Camera.CFrame:Lerp(targetCFrame, Config.Combat.Smoothness * 0.1)
+            -- Verify it's an enemy
+            if IsEnemy(target, Config.Combat.TeamCheck) then
+                local targetPart = target.Character:FindFirstChild(Config.Combat.TargetPart) or target.Character:FindFirstChildOfClass("MeshPart") or target.Character:FindFirstChild("HumanoidRootPart")
+                if targetPart then
+                    local targetCFrame = CFrame.new(Camera.CFrame.Position, targetPart.Position)
+                    Camera.CFrame = Camera.CFrame:Lerp(targetCFrame, Config.Combat.Smoothness * 0.1)
+                    
+                    -- Auto Shoot if enabled and target is locked
+                    if Config.Combat.AutoShoot and Config.Combat.LockedTarget then
+                        local currentTime = tick()
+                        if currentTime - lastAimShootTime >= Config.Combat.ShootDelay then
+                            local char = LocalPlayer.Character
+                            local tool = char and char:FindFirstChildOfClass("Tool")
+                            if tool then
+                                task.spawn(function()
+                                    mouse1press()
+                                    task.wait(0.05)
+                                    mouse1release()
+                                end)
+                                lastAimShootTime = currentTime
+                            end
+                        end
+                    end
+                end
             end
         end
     end
@@ -554,24 +640,20 @@ RunService.RenderStepped:Connect(function()
         
         if targetPlayer and targetPlayer ~= LocalPlayer then
             -- Check if it's an enemy
-            if LocalPlayer.Team and targetPlayer.Team then
-                if LocalPlayer.Team == targetPlayer.Team then
-                    return -- Same team, don't shoot
-                end
-            end
-            
-            -- Check if player is alive
-            local hum = targetChar:FindFirstChildOfClass("Humanoid")
-            if hum and hum.Health > 0 then
-                -- Shoot
-                local tool = char:FindFirstChildOfClass("Tool")
-                if tool then
-                    task.spawn(function()
-                        mouse1press()
-                        task.wait(0.05)
-                        mouse1release()
-                    end)
-                    lastTriggerTime = currentTime
+            if IsEnemy(targetPlayer, Config.Combat.TeamCheck) then
+                -- Check if player is alive
+                local hum = targetChar:FindFirstChildOfClass("Humanoid")
+                if hum and hum.Health > 0 then
+                    -- Shoot
+                    local tool = char:FindFirstChildOfClass("Tool")
+                    if tool then
+                        task.spawn(function()
+                            mouse1press()
+                            task.wait(0.05)
+                            mouse1release()
+                        end)
+                        lastTriggerTime = currentTime
+                    end
                 end
             end
         end
@@ -861,15 +943,6 @@ end)
 local lastShootTime = 0
 local shootDelay = 0.1 -- Delay between shots
 
-local function IsEnemy(player)
-    -- Team check - if both players have teams, check if different
-    if LocalPlayer.Team and player.Team then
-        return LocalPlayer.Team ~= player.Team
-    end
-    -- If no teams, everyone is enemy except yourself
-    return player ~= LocalPlayer
-end
-
 RunService.Heartbeat:Connect(function()
     if not Config.Misc.KillAura or not UI.Active then return end
     local char = LocalPlayer.Character
@@ -882,7 +955,7 @@ RunService.Heartbeat:Connect(function()
     
     -- Find closest enemy in range
     for _, player in pairs(Players:GetPlayers()) do
-        if IsEnemy(player) and player.Character then
+        if IsEnemy(player, Config.Misc.KillAuraTeamCheck) and player.Character then
             local enemyRoot = player.Character:FindFirstChild("HumanoidRootPart")
             local enemyHum = player.Character:FindFirstChildOfClass("Humanoid")
             if enemyRoot and enemyHum and enemyHum.Health > 0 then
@@ -1066,10 +1139,13 @@ local MiscPage = UI:CreateTab("Misc")
 
 -- Combat Controls
 UI:CreateToggle(CombatPage, "Aim Assist", "Combat", "SilentAim")
+UI:CreateToggle(CombatPage, "Team Check", "Combat", "TeamCheck")
 UI:CreateSlider(CombatPage, "FOV Radius", 50, 400, "Combat", "FOV")
 UI:CreateSlider(CombatPage, "Smoothness", 1, 10, "Combat", "Smoothness")
 UI:CreateToggle(CombatPage, "Show FOV Circle", "Combat", "ShowFOV")
 UI:CreateKeybind(CombatPage, "Lock/Unlock Target", "Combat", "LockKey")
+UI:CreateToggle(CombatPage, "Auto Shoot (Locked Target)", "Combat", "AutoShoot")
+UI:CreateSlider(CombatPage, "Auto Shoot Delay (s)", 0, 1, "Combat", "ShootDelay")
 UI:CreateToggle(CombatPage, "Triggerbot", "Combat", "Triggerbot")
 UI:CreateSlider(CombatPage, "Trigger Delay (s)", 0, 1, "Combat", "TriggerDelay")
 
@@ -1106,6 +1182,7 @@ UI:CreateToggle(MiscPage, "Infinite Jump", "Misc", "InfiniteJump")
 UI:CreateToggle(MiscPage, "FOV Changer", "Misc", "FOVChanger")
 UI:CreateSlider(MiscPage, "FOV Value", 70, 120, "Misc", "FOVValue")
 UI:CreateToggle(MiscPage, "Kill Aura + Auto Aim", "Misc", "KillAura")
+UI:CreateToggle(MiscPage, "Kill Aura Team Check", "Misc", "KillAuraTeamCheck")
 UI:CreateSlider(MiscPage, "Kill Aura Range", 5, 50, "Misc", "KillAuraRange")
 
 -- Teleport to Player Section
