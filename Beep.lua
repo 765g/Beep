@@ -350,21 +350,34 @@ local ProjectLabel = UI:Create("TextLabel", {
 })
 RegisterAccent(function(c) ProjectLabel.TextColor3 = c end)
 
--- Watermark (Minimal style - top left corner)
-local Watermark = UI:Create("TextLabel", {
-    Size = UDim2.new(0, 0, 0, 18),
-    Position = UDim2.new(0, 8, 0, 8),
-    BackgroundTransparency = 1,
-    Text = "beep",
-    TextColor3 = Config.Visuals.Accent,
-    Font = Enum.Font.GothamBold,
-    TextSize = 14,
-    TextXAlignment = Enum.TextXAlignment.Left,
+-- Watermark (Clean style with background)
+local WatermarkFrame = UI:Create("Frame", {
+    Size = UDim2.new(0, 0, 0, 24),
+    Position = UDim2.new(0, 10, 0, 10),
+    BackgroundColor3 = Color3.fromRGB(20, 20, 25),
+    BackgroundTransparency = 0.25,
     AutomaticSize = Enum.AutomaticSize.X,
     ZIndex = 100,
     Visible = Config.Misc.Watermark,
     Parent = UI.Screen
 })
+Instance.new("UICorner", WatermarkFrame).CornerRadius = UDim.new(0, 6)
+UI:Create("UIPadding", {PaddingLeft = UDim.new(0, 10), PaddingRight = UDim.new(0, 10), Parent = WatermarkFrame})
+
+local Watermark = UI:Create("TextLabel", {
+    Size = UDim2.new(0, 0, 1, 0),
+    Position = UDim2.new(0, 0, 0, 0),
+    BackgroundTransparency = 1,
+    Text = "beep",
+    TextColor3 = Config.Visuals.Accent,
+    Font = Enum.Font.GothamBold,
+    TextSize = 13,
+    TextXAlignment = Enum.TextXAlignment.Left,
+    AutomaticSize = Enum.AutomaticSize.X,
+    ZIndex = 101,
+    Parent = WatermarkFrame
+})
+UI:Create("UIStroke", {Color = Color3.new(0, 0, 0), Thickness = 1.2, Transparency = 0.3, Parent = Watermark})
 RegisterAccent(function(c)
     Watermark.TextColor3 = c
 end)
@@ -376,9 +389,9 @@ task.spawn(function()
             local fps = math.floor(1 / RunService.RenderStepped:Wait())
             local ping = math.floor(game:GetService("Stats").Network.ServerStatsItem["Data Ping"]:GetValue())
             Watermark.Text = string.format("beep | %dfps | %dms", fps, ping)
-            Watermark.Visible = Config.Misc.Watermark
+            WatermarkFrame.Visible = Config.Misc.Watermark
         else
-            Watermark.Visible = false
+            WatermarkFrame.Visible = false
         end
     end
 end)
