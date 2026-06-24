@@ -2026,7 +2026,7 @@ local function CreateTracer(player)
                 return
             end
             
-            if Config.Visuals.Tracers then
+            if Config.Visuals.Enabled and Config.Visuals.Tracers then
                 -- Update color based on team
                 local isEnemy = IsEnemy(player, true)
                 local espColor = isEnemy and Config.Visuals.ESPColor or Color3.fromRGB(80, 255, 120)
@@ -2086,8 +2086,8 @@ local function CreateHealthBar(player)
         
         task.spawn(function()
             while billboardGui.Parent and char:IsDescendantOf(Workspace) and UI.Active do
-                billboardGui.Enabled = Config.Visuals.HealthBars
-                if Config.Visuals.HealthBars then
+                billboardGui.Enabled = Config.Visuals.Enabled and Config.Visuals.HealthBars
+                if Config.Visuals.Enabled and Config.Visuals.HealthBars then
                     local healthPercent = hum.Health / hum.MaxHealth
                     healthBar.Size = UDim2.new(healthPercent, 0, 1, 0)
                     healthBar.BackgroundColor3 = Color3.new(1 - healthPercent, healthPercent, 0)
@@ -2168,7 +2168,7 @@ local function CreateSkeleton(player)
                 return
             end
             
-            if Config.Visuals.SkeletonESP then
+            if Config.Visuals.Enabled and Config.Visuals.SkeletonESP then
                 -- Check if it's enemy for color
                 local isEnemy = IsEnemy(player, true)
                 local skeletonColor = isEnemy and Config.Visuals.ESPColor or Color3.fromRGB(80, 255, 120)
@@ -2234,7 +2234,7 @@ local function CreateBox2D(player)
                 return
             end
             
-            if Config.Visuals.BoxESP then
+            if Config.Visuals.Enabled and Config.Visuals.BoxESP then
                 -- Check if player is enemy for color coding
                 local isEnemy = IsEnemy(player, true) -- Always check teams
                 local boxColor = isEnemy and Config.Visuals.ESPColor or Color3.fromRGB(80, 255, 120) -- Custom color for enemies, Green for teammates
