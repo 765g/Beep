@@ -382,6 +382,37 @@ RegisterAccent(function(c)
     Watermark.TextColor3 = c
 end)
 
+-- Make Watermark Draggable
+local watermarkDragging = false
+local watermarkDragStart = nil
+local watermarkStartPos = nil
+
+WatermarkFrame.InputBegan:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 then
+        watermarkDragging = true
+        watermarkDragStart = input.Position
+        watermarkStartPos = WatermarkFrame.Position
+    end
+end)
+
+WatermarkFrame.InputEnded:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 then
+        watermarkDragging = false
+    end
+end)
+
+UserInputService.InputChanged:Connect(function(input)
+    if watermarkDragging and input.UserInputType == Enum.UserInputType.MouseMovement then
+        local delta = input.Position - watermarkDragStart
+        WatermarkFrame.Position = UDim2.new(
+            watermarkStartPos.X.Scale, 
+            watermarkStartPos.X.Offset + delta.X,
+            watermarkStartPos.Y.Scale, 
+            watermarkStartPos.Y.Offset + delta.Y
+        )
+    end
+end)
+
 -- Update Watermark
 task.spawn(function()
     while task.wait(0.5) do
@@ -412,7 +443,7 @@ local SearchBox = UI:Create("TextBox", {
     Position = UDim2.new(0, 12, 0, 5),
     BackgroundTransparency = 1,
     Text = "",
-    PlaceholderText = "🔍  Search any hack across all tabs...",
+    PlaceholderText = "Search any hack across all tabs...",
     TextColor3 = Color3.new(1, 1, 1),
     PlaceholderColor3 = Color3.fromRGB(150, 140, 160),
     Font = Enum.Font.Gotham,
@@ -1133,7 +1164,7 @@ RunService.RenderStepped:Connect(function()
                         currentAimTarget = nil
                         lastAimTargetHealth = nil
                         targetSwitchCooldown = tick() + Config.Combat.TargetSwitcherDelay
-                        UI:Notify("🎯 Target eliminated → switching...")
+                        UI:Notify("Target eliminated - switching...")
                     else
                         lastAimTargetHealth = hum.Health
                     end
