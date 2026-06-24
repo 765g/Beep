@@ -1557,10 +1557,23 @@ task.spawn(function()
                 continue 
             end
             
+            -- Extra check: Must be a BasePart belonging to a character
+            if not mouseTarget:IsA("BasePart") then
+                isAimingAtEnemy = false
+                continue
+            end
+            
             local targetChar = mouseTarget:FindFirstAncestorOfClass("Model")
             if not targetChar then 
                 isAimingAtEnemy = false
                 continue 
+            end
+            
+            -- Must have a Humanoid to be a valid character
+            local hum = targetChar:FindFirstChildOfClass("Humanoid")
+            if not hum then
+                isAimingAtEnemy = false
+                continue
             end
             
             local targetPlayer = Players:GetPlayerFromCharacter(targetChar)
@@ -1574,8 +1587,7 @@ task.spawn(function()
                 continue 
             end
             
-            local hum = targetChar:FindFirstChildOfClass("Humanoid")
-            if not hum or hum.Health <= 0 then 
+            if hum.Health <= 0 then 
                 isAimingAtEnemy = false
                 continue 
             end
