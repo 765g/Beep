@@ -42,7 +42,7 @@ local Config = {
         HealthBars = false,
         BoxESP = false,
         HeadDot = false,
-        Accent = Color3.fromRGB(138, 43, 226) -- Purple
+        Accent = Color3.fromRGB(255, 255, 255) -- White
     },
     Combat = {
         SilentAim = false,
@@ -119,7 +119,7 @@ local Config = {
     },
     UI = {
         ThemeColors = {
-            Color3.fromRGB(138, 43, 226), -- Purple (default)
+            Color3.fromRGB(255, 255, 255), -- White (default)
             Color3.fromRGB(255, 80, 80),  -- Red
             Color3.fromRGB(80, 160, 255), -- Blue
             Color3.fromRGB(80, 255, 120), -- Green
@@ -2415,7 +2415,7 @@ local ThemeContainer = UI:Create("Frame", {
     BackgroundTransparency = 1, ZIndex = 5, Parent = ThemeFrame
 })
 
-local themeNames = {"Steel", "Red", "Blue", "Green", "Yellow", "Pink"}
+local themeNames = {"White", "Red", "Blue", "Green", "Yellow", "Pink"}
 for i, color in ipairs(Config.UI.ThemeColors) do
     local ThemeBtn = UI:Create("TextButton", {
         Size = UDim2.new(0, 70, 0, 30),
