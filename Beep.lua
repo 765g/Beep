@@ -1544,11 +1544,25 @@ end)
 -- Auto Shoot for Locked Target (Separate optimized loop)
 task.spawn(function()
     while task.wait(0.05) do -- Check every 50ms (20 fps)
-        if UI.Active and Config.Combat.AutoShoot and Config.Combat.LockedTarget then
+        if UI.Active and Config.Combat.AutoShoot then
             local currentTime = tick()
             if currentTime - lastAimShootTime >= Config.Combat.ShootDelay then
-                -- Verify target is still valid and is enemy
-                if Combat:IsTargetValid(Config.Combat.LockedTarget) and IsEnemy(Config.Combat.LockedTarget, Config.Combat.TeamCheck) then
+                local targetToShoot = nil
+                
+                -- Priority 1: Use locked target if available
+                if Config.Combat.LockedTarget then
+                    if Combat:IsTargetValid(Config.Combat.LockedTarget) and IsEnemy(Config.Combat.LockedTarget, Config.Combat.TeamCheck) then
+                        targetToShoot = Config.Combat.LockedTarget
+                    end
+                -- Priority 2: If Aim Assist is on, use closest player in FOV
+                elseif Config.Combat.SilentAim then
+                    local closestTarget = Combat:GetClosestPlayer()
+                    if closestTarget then
+                        targetToShoot = closestTarget
+                    end
+                end
+                
+                if targetToShoot then
                     Shoot()
                     lastAimShootTime = currentTime
                 end
