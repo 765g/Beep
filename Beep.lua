@@ -1551,19 +1551,35 @@ task.spawn(function()
                 continue 
             end
             
+            -- Method 1: Mouse.Target
             local mouseTarget = Mouse.Target
-            if not mouseTarget then 
-                isAimingAtEnemy = false
-                continue 
+            local targetPlayer = nil
+            
+            if mouseTarget then
+                local targetChar = mouseTarget:FindFirstAncestorOfClass("Model")
+                if targetChar then
+                    targetPlayer = Players:GetPlayerFromCharacter(targetChar)
+                end
             end
             
-            local targetChar = mouseTarget:FindFirstAncestorOfClass("Model")
-            if not targetChar then 
-                isAimingAtEnemy = false
-                continue 
+            -- Method 2: Raycast from camera if Mouse.Target fails
+            if not targetPlayer then
+                pcall(function()
+                    local ray = Camera:ScreenPointToRay(Mouse.X, Mouse.Y)
+                    local raycastParams = RaycastParams.new()
+                    raycastParams.FilterType = Enum.RaycastFilterType.Blacklist
+                    raycastParams.FilterDescendantsInstances = {char}
+                    
+                    local result = Workspace:Raycast(ray.Origin, ray.Direction * 1000, raycastParams)
+                    if result and result.Instance then
+                        local targetChar = result.Instance:FindFirstAncestorOfClass("Model")
+                        if targetChar then
+                            targetPlayer = Players:GetPlayerFromCharacter(targetChar)
+                        end
+                    end
+                end)
             end
             
-            local targetPlayer = Players:GetPlayerFromCharacter(targetChar)
             if not targetPlayer or targetPlayer == LocalPlayer then 
                 isAimingAtEnemy = false
                 continue 
@@ -1572,6 +1588,12 @@ task.spawn(function()
             if not IsEnemy(targetPlayer, Config.Combat.TeamCheck) then 
                 isAimingAtEnemy = false
                 continue 
+            end
+            
+            local targetChar = targetPlayer.Character
+            if not targetChar then
+                isAimingAtEnemy = false
+                continue
             end
             
             local hum = targetChar:FindFirstChildOfClass("Humanoid")
