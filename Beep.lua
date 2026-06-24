@@ -350,69 +350,32 @@ local ProjectLabel = UI:Create("TextLabel", {
 })
 RegisterAccent(function(c) ProjectLabel.TextColor3 = c end)
 
--- Watermark
+-- Watermark (Minimal style - top left corner)
 local Watermark = UI:Create("TextLabel", {
-    Size = UDim2.new(0, 300, 0, 50),
-    Position = UDim2.new(0, 10, 0, 400),
-    BackgroundColor3 = Color3.fromRGB(12, 10, 18),
-    BackgroundTransparency = 0.3,
-    Text = "Beep " .. BEEP_VERSION .. " | FPS: 60 | Ping: 0ms",
-    TextColor3 = Color3.new(1, 1, 1),
+    Size = UDim2.new(0, 0, 0, 18),
+    Position = UDim2.new(0, 8, 0, 8),
+    BackgroundTransparency = 1,
+    Text = "beep",
+    TextColor3 = Config.Visuals.Accent,
     Font = Enum.Font.GothamBold,
-    TextSize = 12,
+    TextSize = 14,
     TextXAlignment = Enum.TextXAlignment.Left,
-    TextYAlignment = Enum.TextYAlignment.Top,
+    AutomaticSize = Enum.AutomaticSize.X,
     ZIndex = 100,
     Visible = Config.Misc.Watermark,
     Parent = UI.Screen
 })
-UI:Create("UIPadding", {PaddingLeft = UDim.new(0, 10), PaddingTop = UDim.new(0, 10), Parent = Watermark})
-Instance.new("UICorner", Watermark).CornerRadius = UDim.new(0, 8)
-UI:Create("UIStroke", {Color = Config.Visuals.Accent, Thickness = 1, Transparency = 0.5, Parent = Watermark})
 RegisterAccent(function(c)
-    local s = Watermark and Watermark:FindFirstChildOfClass("UIStroke")
-    if s then s.Color = c end
-end)
-
--- Make Watermark Draggable
-local watermarkDragging = false
-local watermarkDragStart = nil
-local watermarkStartPos = nil
-
-Watermark.InputBegan:Connect(function(input)
-    if input.UserInputType == Enum.UserInputType.MouseButton1 then
-        watermarkDragging = true
-        watermarkDragStart = input.Position
-        watermarkStartPos = Watermark.Position
-    end
-end)
-
-UserInputService.InputEnded:Connect(function(input)
-    if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
-        watermarkDragging = false
-    end
-end)
-
-UserInputService.InputChanged:Connect(function(input)
-    if watermarkDragging and input.UserInputType == Enum.UserInputType.MouseMovement then
-        local delta = input.Position - watermarkDragStart
-        Watermark.Position = UDim2.new(
-            watermarkStartPos.X.Scale, 
-            watermarkStartPos.X.Offset + delta.X,
-            watermarkStartPos.Y.Scale, 
-            watermarkStartPos.Y.Offset + delta.Y
-        )
-    end
+    Watermark.TextColor3 = c
 end)
 
 -- Update Watermark
 task.spawn(function()
-    while task.wait(1) do
+    while task.wait(0.5) do
         if UI.Active and Config.Misc.Watermark then
             local fps = math.floor(1 / RunService.RenderStepped:Wait())
             local ping = math.floor(game:GetService("Stats").Network.ServerStatsItem["Data Ping"]:GetValue())
-            local time = os.date("%H:%M:%S")
-            Watermark.Text = string.format("Beep %s | FPS: %d | Ping: %dms | %s", BEEP_VERSION, fps, ping, time)
+            Watermark.Text = string.format("beep | %dfps | %dms", fps, ping)
             Watermark.Visible = Config.Misc.Watermark
         else
             Watermark.Visible = false
