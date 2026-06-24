@@ -357,6 +357,7 @@ local WatermarkFrame = UI:Create("Frame", {
     BackgroundColor3 = Color3.fromRGB(20, 20, 25),
     BackgroundTransparency = 0.25,
     AutomaticSize = Enum.AutomaticSize.X,
+    Active = true,
     ZIndex = 100,
     Visible = Config.Misc.Watermark,
     Parent = UI.Screen
@@ -2355,7 +2356,7 @@ UI:Create("UIStroke", {Color = Color3.fromRGB(60, 140, 200), Thickness = 1.5, Tr
 UI:Create("TextLabel", {
     Size = UDim2.new(1, -20, 1, 0), Position = UDim2.new(0, 10, 0, 0),
     BackgroundTransparency = 1, 
-    Text = "💡 For Ragebot Auto-Shoot: Enable Triggerbot",
+    Text = "Tip: For Ragebot Auto-Shoot, enable Triggerbot",
     TextColor3 = Color3.fromRGB(200, 230, 255), 
     Font = Enum.Font.GothamBold, TextSize = 12,
     TextXAlignment = Enum.TextXAlignment.Center, TextWrapped = true,
