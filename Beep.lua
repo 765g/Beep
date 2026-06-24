@@ -927,55 +927,225 @@ function UI:CreateSelector(parent, text, configSection, configKey, options, call
     end)
 end
 
--- Color Input (HEX) Component
-function UI:CreateColorInput(parent, text, configSection, configKey, callback)
+-- Helper function to parse HEX color (supports #FFFFFF, FFFFFF, #FFF, FFF formats)
+local function ParseHexColor(hexStr)
+    local hex = hexStr:gsub("#", ""):gsub(" ", ""):upper()
+    if #hex == 3 then
+        hex = hex:sub(1,1):rep(2) .. hex:sub(2,2):rep(2) .. hex:sub(3,3):rep(2)
+    end
+    if #hex == 6 then
+        local r = tonumber(hex:sub(1,2), 16)
+        local g = tonumber(hex:sub(3,4), 16)
+        local b = tonumber(hex:sub(5,6), 16)
+        if r and g and b then
+            return Color3.fromRGB(r, g, b), hex
+        end
+    end
+    return nil, nil
+end
+
+-- HSV to RGB conversion
+local function HSVtoRGB(h, s, v)
+    local r, g, b
+    local i = math.floor(h * 6)
+    local f = h * 6 - i
+    local p = v * (1 - s)
+    local q = v * (1 - f * s)
+    local t = v * (1 - (1 - f) * s)
+    i = i % 6
+    if i == 0 then r, g, b = v, t, p
+    elseif i == 1 then r, g, b = q, v, p
+    elseif i == 2 then r, g, b = p, v, t
+    elseif i == 3 then r, g, b = p, q, v
+    elseif i == 4 then r, g, b = t, p, v
+    elseif i == 5 then r, g, b = v, p, q
+    end
+    return Color3.new(r, g, b)
+end
+
+-- Color Picker Component (compact, Beep style)
+function UI:CreateColorPicker(parent, text, configSection, configKey, callback)
     local Frame = UI:Create("Frame", {Size = UDim2.new(1, -10, 0, 42), BackgroundColor3 = Color3.fromRGB(18, 18, 24), ZIndex = 4, Parent = parent})
     Instance.new("UICorner", Frame).CornerRadius = UDim.new(0, 8)
     UI:Create("UIStroke", {Color = Color3.fromRGB(32, 32, 40), Thickness = 1, Transparency = 0.4, Parent = Frame})
     
-    UI:Create("TextLabel", {Size = UDim2.new(0.5, 0, 1, 0), Position = UDim2.new(0, 14, 0, 0), BackgroundTransparency = 1, Text = text, TextColor3 = Color3.fromRGB(225, 226, 232), Font = Enum.Font.Gotham, TextSize = 13, TextXAlignment = Enum.TextXAlignment.Left, ZIndex = 5, Parent = Frame})
+    UI:Create("TextLabel", {Size = UDim2.new(0.4, 0, 1, 0), Position = UDim2.new(0, 14, 0, 0), BackgroundTransparency = 1, Text = text, TextColor3 = Color3.fromRGB(225, 226, 232), Font = Enum.Font.Gotham, TextSize = 13, TextXAlignment = Enum.TextXAlignment.Left, ZIndex = 5, Parent = Frame})
     
     local currentColor = Config[configSection][configKey]
-    local hexString = string.format("%02X%02X%02X", math.floor(currentColor.R * 255), math.floor(currentColor.G * 255), math.floor(currentColor.B * 255))
+    local currentHue, currentSat, currentVal = 0, 1, 1
     
-    -- Color preview box
-    local ColorPreview = UI:Create("Frame", {
-        Size = UDim2.new(0, 26, 0, 26), Position = UDim2.new(1, -130, 0.5, -13),
-        BackgroundColor3 = currentColor, ZIndex = 5, Parent = Frame
+    -- Color preview button (click to open picker)
+    local ColorBtn = UI:Create("TextButton", {
+        Size = UDim2.new(0, 26, 0, 26), Position = UDim2.new(1, -40, 0.5, -13),
+        BackgroundColor3 = currentColor, Text = "", ZIndex = 5, Parent = Frame
     })
-    Instance.new("UICorner", ColorPreview).CornerRadius = UDim.new(0, 6)
-    UI:Create("UIStroke", {Color = Color3.fromRGB(60, 60, 70), Thickness = 1, Parent = ColorPreview})
+    Instance.new("UICorner", ColorBtn).CornerRadius = UDim.new(0, 6)
+    UI:Create("UIStroke", {Color = Color3.fromRGB(60, 60, 70), Thickness = 1, Parent = ColorBtn})
     
-    -- HEX input
-    local HexInput = UI:Create("TextBox", {
-        Size = UDim2.new(0, 80, 0, 26), Position = UDim2.new(1, -96, 0.5, -13),
-        BackgroundColor3 = Color3.fromRGB(28, 28, 36),
-        Text = hexString,
-        TextColor3 = Color3.new(1,1,1), PlaceholderText = "FFFFFF", PlaceholderColor3 = Color3.fromRGB(100, 100, 110),
-        Font = Enum.Font.GothamBold, TextSize = 11, 
-        ClearTextOnFocus = false, ZIndex = 5, Parent = Frame
-    })
-    Instance.new("UICorner", HexInput).CornerRadius = UDim.new(0, 6)
+    local pickerOpen = false
+    local PickerFrame = nil
     
-    HexInput.FocusLost:Connect(function()
-        local hex = HexInput.Text:gsub("#", ""):upper()
-        if #hex == 6 then
-            local r = tonumber(hex:sub(1,2), 16)
-            local g = tonumber(hex:sub(3,4), 16)
-            local b = tonumber(hex:sub(5,6), 16)
-            if r and g and b then
-                local newColor = Color3.fromRGB(r, g, b)
-                Config[configSection][configKey] = newColor
-                ColorPreview.BackgroundColor3 = newColor
-                HexInput.Text = hex
-                if callback then callback(newColor) end
-                return
-            end
+    local function updateColor(color)
+        Config[configSection][configKey] = color
+        ColorBtn.BackgroundColor3 = color
+        if callback then callback(color) end
+    end
+    
+    local function closePicker()
+        if PickerFrame then PickerFrame:Destroy() PickerFrame = nil end
+        pickerOpen = false
+    end
+    
+    ColorBtn.MouseButton1Click:Connect(function()
+        if pickerOpen then closePicker() return end
+        pickerOpen = true
+        
+        local btnPos = ColorBtn.AbsolutePosition
+        
+        -- Picker popup
+        PickerFrame = UI:Create("Frame", {
+            Size = UDim2.new(0, 180, 0, 160),
+            Position = UDim2.new(0, btnPos.X - 150, 0, btnPos.Y + 30),
+            BackgroundColor3 = Color3.fromRGB(20, 20, 26),
+            ZIndex = 200, Parent = UI.Screen
+        })
+        Instance.new("UICorner", PickerFrame).CornerRadius = UDim.new(0, 8)
+        UI:Create("UIStroke", {Color = Color3.fromRGB(50, 50, 60), Thickness = 1, Parent = PickerFrame})
+        
+        -- Saturation/Value box (100x100)
+        local SVBox = UI:Create("ImageLabel", {
+            Size = UDim2.new(0, 100, 0, 100), Position = UDim2.new(0, 10, 0, 10),
+            BackgroundColor3 = HSVtoRGB(currentHue, 1, 1),
+            Image = "rbxassetid://4155801252", ZIndex = 201, Parent = PickerFrame
+        })
+        Instance.new("UICorner", SVBox).CornerRadius = UDim.new(0, 4)
+        
+        -- SV cursor
+        local SVCursor = UI:Create("Frame", {
+            Size = UDim2.new(0, 10, 0, 10), AnchorPoint = Vector2.new(0.5, 0.5),
+            Position = UDim2.new(currentSat, 0, 1 - currentVal, 0),
+            BackgroundColor3 = Color3.new(1,1,1), ZIndex = 202, Parent = SVBox
+        })
+        Instance.new("UICorner", SVCursor).CornerRadius = UDim.new(1, 0)
+        UI:Create("UIStroke", {Color = Color3.new(0,0,0), Thickness = 2, Parent = SVCursor})
+        
+        -- Hue bar (vertical)
+        local HueBar = UI:Create("Frame", {
+            Size = UDim2.new(0, 20, 0, 100), Position = UDim2.new(0, 120, 0, 10),
+            ZIndex = 201, Parent = PickerFrame
+        })
+        Instance.new("UICorner", HueBar).CornerRadius = UDim.new(0, 4)
+        UI:Create("UIGradient", {
+            Color = ColorSequence.new({
+                ColorSequenceKeypoint.new(0, Color3.fromRGB(255,0,0)),
+                ColorSequenceKeypoint.new(0.17, Color3.fromRGB(255,255,0)),
+                ColorSequenceKeypoint.new(0.33, Color3.fromRGB(0,255,0)),
+                ColorSequenceKeypoint.new(0.5, Color3.fromRGB(0,255,255)),
+                ColorSequenceKeypoint.new(0.67, Color3.fromRGB(0,0,255)),
+                ColorSequenceKeypoint.new(0.83, Color3.fromRGB(255,0,255)),
+                ColorSequenceKeypoint.new(1, Color3.fromRGB(255,0,0))
+            }), Rotation = 90, Parent = HueBar
+        })
+        
+        -- Hue cursor
+        local HueCursor = UI:Create("Frame", {
+            Size = UDim2.new(1, 4, 0, 6), AnchorPoint = Vector2.new(0.5, 0.5),
+            Position = UDim2.new(0.5, 0, currentHue, 0),
+            BackgroundColor3 = Color3.new(1,1,1), ZIndex = 202, Parent = HueBar
+        })
+        Instance.new("UICorner", HueCursor).CornerRadius = UDim.new(0, 2)
+        UI:Create("UIStroke", {Color = Color3.new(0,0,0), Thickness = 1, Parent = HueCursor})
+        
+        -- HEX input
+        local hexStr = string.format("%02X%02X%02X", math.floor(currentColor.R*255), math.floor(currentColor.G*255), math.floor(currentColor.B*255))
+        local HexInput = UI:Create("TextBox", {
+            Size = UDim2.new(0, 70, 0, 24), Position = UDim2.new(0, 10, 0, 120),
+            BackgroundColor3 = Color3.fromRGB(30, 30, 38), Text = hexStr,
+            TextColor3 = Color3.new(1,1,1), Font = Enum.Font.GothamBold, TextSize = 11,
+            ClearTextOnFocus = false, ZIndex = 201, Parent = PickerFrame
+        })
+        Instance.new("UICorner", HexInput).CornerRadius = UDim.new(0, 4)
+        
+        -- Preview
+        local Preview = UI:Create("Frame", {
+            Size = UDim2.new(0, 30, 0, 24), Position = UDim2.new(0, 85, 0, 120),
+            BackgroundColor3 = currentColor, ZIndex = 201, Parent = PickerFrame
+        })
+        Instance.new("UICorner", Preview).CornerRadius = UDim.new(0, 4)
+        
+        -- Close button
+        local CloseBtn = UI:Create("TextButton", {
+            Size = UDim2.new(0, 40, 0, 24), Position = UDim2.new(0, 130, 0, 120),
+            BackgroundColor3 = Color3.fromRGB(40, 40, 50), Text = "OK",
+            TextColor3 = Color3.new(1,1,1), Font = Enum.Font.GothamBold, TextSize = 10,
+            ZIndex = 201, Parent = PickerFrame
+        })
+        Instance.new("UICorner", CloseBtn).CornerRadius = UDim.new(0, 4)
+        CloseBtn.MouseButton1Click:Connect(closePicker)
+        
+        local function updateFromHSV()
+            local color = HSVtoRGB(currentHue, currentSat, currentVal)
+            SVBox.BackgroundColor3 = HSVtoRGB(currentHue, 1, 1)
+            Preview.BackgroundColor3 = color
+            HexInput.Text = string.format("%02X%02X%02X", math.floor(color.R*255), math.floor(color.G*255), math.floor(color.B*255))
+            updateColor(color)
         end
-        -- Invalid input, reset to current
-        local c = Config[configSection][configKey]
-        HexInput.Text = string.format("%02X%02X%02X", math.floor(c.R * 255), math.floor(c.G * 255), math.floor(c.B * 255))
+        
+        -- SV drag
+        local draggingSV = false
+        SVBox.InputBegan:Connect(function(input)
+            if input.UserInputType == Enum.UserInputType.MouseButton1 then draggingSV = true end
+        end)
+        SVBox.InputEnded:Connect(function(input)
+            if input.UserInputType == Enum.UserInputType.MouseButton1 then draggingSV = false end
+        end)
+        
+        -- Hue drag
+        local draggingHue = false
+        HueBar.InputBegan:Connect(function(input)
+            if input.UserInputType == Enum.UserInputType.MouseButton1 then draggingHue = true end
+        end)
+        HueBar.InputEnded:Connect(function(input)
+            if input.UserInputType == Enum.UserInputType.MouseButton1 then draggingHue = false end
+        end)
+        
+        UserInputService.InputChanged:Connect(function(input)
+            if input.UserInputType == Enum.UserInputType.MouseMovement then
+                if draggingSV then
+                    local x = math.clamp((input.Position.X - SVBox.AbsolutePosition.X) / SVBox.AbsoluteSize.X, 0, 1)
+                    local y = math.clamp((input.Position.Y - SVBox.AbsolutePosition.Y) / SVBox.AbsoluteSize.Y, 0, 1)
+                    currentSat = x
+                    currentVal = 1 - y
+                    SVCursor.Position = UDim2.new(x, 0, y, 0)
+                    updateFromHSV()
+                end
+                if draggingHue then
+                    local y = math.clamp((input.Position.Y - HueBar.AbsolutePosition.Y) / HueBar.AbsoluteSize.Y, 0, 1)
+                    currentHue = y
+                    HueCursor.Position = UDim2.new(0.5, 0, y, 0)
+                    updateFromHSV()
+                end
+            end
+        end)
+        
+        HexInput.FocusLost:Connect(function()
+            local color, hex = ParseHexColor(HexInput.Text)
+            if color and hex then
+                HexInput.Text = hex
+                Preview.BackgroundColor3 = color
+                updateColor(color)
+            end
+        end)
     end)
+    
+    if configKey == "Accent" then
+        RegisterAccent(function(c) ColorBtn.BackgroundColor3 = c end)
+    end
+end
+
+-- Backwards compatibility alias
+function UI:CreateColorInput(parent, text, configSection, configKey, callback)
+    return UI:CreateColorPicker(parent, text, configSection, configKey, callback)
 end
 
 -- Combat System
