@@ -2511,24 +2511,37 @@ PlayerDropdown.MouseButton1Click:Connect(function()
     dropdownOpen = true
     DropdownList = UI:Create("ScrollingFrame", {
         Size = UDim2.new(1, -20, 0, 150), Position = UDim2.new(0, 10, 0, 70),
-        BackgroundColor3 = Color3.fromRGB(22, 22, 28), ScrollBarThickness = 4,
+        BackgroundColor3 = Color3.fromRGB(15, 15, 20), ScrollBarThickness = 4,
+        ScrollBarImageColor3 = Config.Visuals.Accent,
         CanvasSize = UDim2.new(0, 0, 0, 0), ZIndex = 10, Parent = TeleportFrame
     })
     Instance.new("UICorner", DropdownList).CornerRadius = UDim.new(0, 6)
+    UI:Create("UIStroke", {Color = Color3.fromRGB(40, 40, 50), Thickness = 1, Parent = DropdownList})
     
     local Layout = UI:Create("UIListLayout", {Padding = UDim.new(0, 2), Parent = DropdownList})
+    UI:Create("UIPadding", {PaddingTop = UDim.new(0, 4), PaddingBottom = UDim.new(0, 4), PaddingLeft = UDim.new(0, 4), PaddingRight = UDim.new(0, 4), Parent = DropdownList})
     Layout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
-        DropdownList.CanvasSize = UDim2.new(0, 0, 0, Layout.AbsoluteContentSize.Y)
+        DropdownList.CanvasSize = UDim2.new(0, 0, 0, Layout.AbsoluteContentSize.Y + 8)
     end)
     
     for _, player in pairs(Players:GetPlayers()) do
         if player ~= LocalPlayer then
             local btn = UI:Create("TextButton", {
-                Size = UDim2.new(1, -5, 0, 25), BackgroundColor3 = Color3.fromRGB(28, 28, 36),
+                Size = UDim2.new(1, -8, 0, 28), BackgroundColor3 = Color3.fromRGB(25, 25, 32),
                 Text = player.DisplayName, TextColor3 = Color3.new(1,1,1),
-                Font = Enum.Font.Gotham, TextSize = 10, ZIndex = 11, Parent = DropdownList
+                Font = Enum.Font.GothamMedium, TextSize = 12, ZIndex = 11, Parent = DropdownList
             })
-            Instance.new("UICorner", btn).CornerRadius = UDim.new(0, 4)
+            Instance.new("UICorner", btn).CornerRadius = UDim.new(0, 5)
+            
+            -- Hover effect
+            btn.MouseEnter:Connect(function()
+                TweenService:Create(btn, TweenInfo.new(0.15), {BackgroundColor3 = Config.Visuals.Accent}):Play()
+                btn.TextColor3 = isLightColorGlobal(Config.Visuals.Accent) and Color3.new(0,0,0) or Color3.new(1,1,1)
+            end)
+            btn.MouseLeave:Connect(function()
+                TweenService:Create(btn, TweenInfo.new(0.15), {BackgroundColor3 = Color3.fromRGB(25, 25, 32)}):Play()
+                btn.TextColor3 = Color3.new(1,1,1)
+            end)
             
             btn.MouseButton1Click:Connect(function()
                 Config.Misc.TeleportPlayer = player
