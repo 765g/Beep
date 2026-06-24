@@ -756,7 +756,7 @@ function UI:CreateToggle(parent, text, configSection, configKey, callback)
     local Knob = UI:Create("Frame", {
         Size = UDim2.new(0, 16, 0, 16),
         Position = state and UDim2.new(1, -20, 0.5, -8) or UDim2.new(0, 4, 0.5, -8),
-        BackgroundColor3 = isLightColorGlobal(Config.Visuals.Accent) and Color3.fromRGB(45, 45, 55) or Color3.new(1, 1, 1),
+        BackgroundColor3 = isLightColorGlobal(Config.Visuals.Accent) and Color3.fromRGB(80, 80, 90) or Color3.new(1, 1, 1),
         ZIndex = 6, Parent = Track
     })
     Instance.new("UICorner", Knob).CornerRadius = UDim.new(1, 0)
@@ -766,7 +766,7 @@ function UI:CreateToggle(parent, text, configSection, configKey, callback)
     ToggleIndicators[key] = {track = Track, knob = Knob}
     RegisterAccent(function(c)
         if Config[configSection][configKey] then Track.BackgroundColor3 = c end
-        Knob.BackgroundColor3 = isLightColorGlobal(c) and Color3.fromRGB(45, 45, 55) or Color3.new(1, 1, 1)
+        Knob.BackgroundColor3 = isLightColorGlobal(c) and Color3.fromRGB(80, 80, 90) or Color3.new(1, 1, 1)
     end)
     
     Track.MouseButton1Click:Connect(function()
@@ -805,14 +805,14 @@ function UI:CreateSlider(parent, text, min, max, configSection, configKey, callb
     local Knob = UI:Create("Frame", {
         Size = UDim2.new(0, 14, 0, 14), AnchorPoint = Vector2.new(0.5, 0.5),
         Position = UDim2.new(1, 0, 0.5, 0),
-        BackgroundColor3 = isLightColorGlobal(Config.Visuals.Accent) and Color3.fromRGB(45, 45, 55) or Color3.new(1, 1, 1), ZIndex = 7, Parent = Fill
+        BackgroundColor3 = isLightColorGlobal(Config.Visuals.Accent) and Color3.fromRGB(80, 80, 90) or Color3.new(1, 1, 1), ZIndex = 7, Parent = Fill
     })
     Instance.new("UICorner", Knob).CornerRadius = UDim.new(1, 0)
     
     RegisterAccent(function(c) 
         Fill.BackgroundColor3 = c
         ValueLabel.TextColor3 = c 
-        Knob.BackgroundColor3 = isLightColorGlobal(c) and Color3.fromRGB(45, 45, 55) or Color3.new(1, 1, 1)
+        Knob.BackgroundColor3 = isLightColorGlobal(c) and Color3.fromRGB(80, 80, 90) or Color3.new(1, 1, 1)
     end)
     
     local Trigger = UI:Create("TextButton", {Size = UDim2.new(1, 0, 3, 0), Position = UDim2.new(0, 0, -1, 0), BackgroundTransparency = 1, Text = "", ZIndex = 7, Parent = SlideBar})
