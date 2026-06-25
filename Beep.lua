@@ -3,7 +3,7 @@
 -- Stable Version
 
 -- VERSION CONTROL (Update this for each new version)
-local BEEP_VERSION = "v4.2.2"
+local BEEP_VERSION = "v5.0.0"
 
 local StartTime = tick()
 if not game:IsLoaded() then
@@ -426,6 +426,87 @@ task.spawn(function()
             WatermarkFrame.Visible = Config.Misc.Watermark
         else
             WatermarkFrame.Visible = false
+        end
+    end
+end)
+
+-- ===== ARRAYLIST (Active Features List - Premium Style) =====
+local ArraylistFrame = UI:Create("Frame", {
+    Size = UDim2.new(0, 220, 0, 0),
+    Position = UDim2.new(1, -230, 0, 10),
+    BackgroundTransparency = 1,
+    AutomaticSize = Enum.AutomaticSize.Y,
+    ZIndex = 100,
+    Parent = UI.Screen
+})
+
+local ArraylistLayout = UI:Create("UIListLayout", {
+    Padding = UDim.new(0, 4),
+    SortOrder = Enum.SortOrder.LayoutOrder,
+    HorizontalAlignment = Enum.HorizontalAlignment.Right,
+    Parent = ArraylistFrame
+})
+
+local ArraylistItems = {}
+
+local function UpdateArraylist()
+    for _, item in pairs(ArraylistItems) do
+        if item and item.Parent then item:Destroy() end
+    end
+    ArraylistItems = {}
+    
+    local activeFeatures = {}
+    
+    if Config.Combat.SilentAim then table.insert(activeFeatures, {name = "Aim Assist", color = Config.Visuals.Accent, key = Config.Combat.LockKey}) end
+    if Config.Combat.Ragebot then table.insert(activeFeatures, {name = "Ragebot", color = Color3.fromRGB(255, 80, 80), key = ""}) end
+    if Config.Combat.Triggerbot then table.insert(activeFeatures, {name = "Triggerbot", color = Color3.fromRGB(255, 200, 80), key = ""}) end
+    if Config.Combat.KillAura then table.insert(activeFeatures, {name = "Kill Aura", color = Color3.fromRGB(255, 100, 100), key = ""}) end
+    if Config.Combat.UltraRapidFire then table.insert(activeFeatures, {name = "Ultra Rapid Fire", color = Color3.fromRGB(255, 150, 50), key = ""}) end
+    if Config.Physics.SpeedActive then table.insert(activeFeatures, {name = "Speed Hack", color = Color3.fromRGB(80, 255, 200), key = Config.Physics.SpeedKey}) end
+    if Config.Physics.FlyActive then table.insert(activeFeatures, {name = "Fly", color = Color3.fromRGB(120, 180, 255), key = Config.Physics.FlyKey}) end
+    if Config.Physics.NoClipActive then table.insert(activeFeatures, {name = "NoClip", color = Color3.fromRGB(200, 150, 255), key = Config.Misc.NoClipToggleKey}) end
+    if Config.Visuals.Enabled then table.insert(activeFeatures, {name = "ESP", color = Color3.fromRGB(80, 255, 120), key = ""}) end
+    
+    for i, feature in ipairs(activeFeatures) do
+        local item = UI:Create("Frame", {
+            Size = UDim2.new(0, 0, 0, 24),
+            BackgroundColor3 = Color3.fromRGB(16, 16, 20),
+            BackgroundTransparency = 0.15,
+            AutomaticSize = Enum.AutomaticSize.X,
+            LayoutOrder = i,
+            ZIndex = 101,
+            Parent = ArraylistFrame
+        })
+        Instance.new("UICorner", item).CornerRadius = UDim.new(0, 6)
+        UI:Create("UIPadding", {PaddingLeft = UDim.new(0, 10), PaddingRight = UDim.new(0, 10), Parent = item})
+        
+        local indicator = UI:Create("Frame", {
+            Size = UDim2.new(0, 2, 1, -8), Position = UDim2.new(0, 3, 0, 4),
+            BackgroundColor3 = feature.color, BorderSizePixel = 0, ZIndex = 102, Parent = item
+        })
+        Instance.new("UICorner", indicator).CornerRadius = UDim.new(1, 0)
+        
+        local label = UI:Create("TextLabel", {
+            Size = UDim2.new(0, 0, 1, 0), Position = UDim2.new(0, 10, 0, 0),
+            BackgroundTransparency = 1,
+            Text = feature.name .. (feature.key ~= "" and " [" .. feature.key .. "]" or ""),
+            TextColor3 = Color3.new(1, 1, 1),
+            Font = Enum.Font.GothamBold,
+            TextSize = 11,
+            TextXAlignment = Enum.TextXAlignment.Left,
+            AutomaticSize = Enum.AutomaticSize.X,
+            ZIndex = 102,
+            Parent = item
+        })
+        
+        table.insert(ArraylistItems, item)
+    end
+end
+
+task.spawn(function()
+    while task.wait(1) do
+        if UI.Active then
+            UpdateArraylist()
         end
     end
 end)
