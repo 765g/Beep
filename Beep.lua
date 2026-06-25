@@ -2,7 +2,7 @@
 -- Universal ESP, Aimbot & Physics Controller
 
 -- VERSION CONTROL (Update this for each new version)
-local BEEP_VERSION = "v5.0.0"
+local BEEP_VERSION = "v5.0.1"
 
 local StartTime = tick()
 if not game:IsLoaded() then
@@ -274,15 +274,15 @@ local Main = UI:Create("Frame", {
 })
 Instance.new("UICorner", Main).CornerRadius = UDim.new(0, 12)
 
--- Glassmorphism blur effect (premium look)
+-- Glassmorphism blur effect (premium look, optimized)
 local MainBlur = Instance.new("ImageLabel", Main)
 MainBlur.Size = UDim2.new(1, 0, 1, 0)
 MainBlur.BackgroundTransparency = 1
 MainBlur.Image = "rbxassetid://8992230677" -- Glass texture
 MainBlur.ImageColor3 = Color3.fromRGB(10, 10, 14)
-MainBlur.ImageTransparency = 0.7
+MainBlur.ImageTransparency = 0.8 -- Increased from 0.7 to 0.8 (lighter, less GPU load)
 MainBlur.ScaleType = Enum.ScaleType.Tile
-MainBlur.TileSize = UDim2.new(0, 128, 0, 128)
+MainBlur.TileSize = UDim2.new(0, 256, 0, 256) -- Increased tile size (less rendering)
 MainBlur.ZIndex = 0
 
 -- Animated gradient overlay (premium effect)
@@ -301,12 +301,14 @@ local AnimatedGradient = UI:Create("UIGradient", {
     Parent = Main
 })
 
--- Animate the gradient
-task.spawn(function()
-    while task.wait(0.03) do
-        if Main.Parent then
-            AnimatedGradient.Rotation = (AnimatedGradient.Rotation + 0.5) % 360
-        end
+-- Animate the gradient (highly optimized: only when menu is visible)
+local lastGradientUpdate = 0
+RunService.RenderStepped:Connect(function()
+    if not Main.Parent or not UI.Visible then return end
+    local now = tick()
+    if now - lastGradientUpdate >= 0.1 then -- Update every 0.1s instead of every frame
+        AnimatedGradient.Rotation = (AnimatedGradient.Rotation + 0.8) % 360
+        lastGradientUpdate = now
     end
 end)
 
@@ -562,17 +564,21 @@ UserInputService.InputChanged:Connect(function(input)
     end
 end)
 
--- Update Watermark
-task.spawn(function()
-    while task.wait(0.5) do
-        if UI.Active and Config.Misc.Watermark then
-            local fps = math.floor(1 / RunService.RenderStepped:Wait())
-            local ping = math.floor(game:GetService("Stats").Network.ServerStatsItem["Data Ping"]:GetValue())
-            Watermark.Text = string.format("beep | %dfps | %dms", fps, ping)
-            WatermarkFrame.Visible = Config.Misc.Watermark
-        else
-            WatermarkFrame.Visible = false
-        end
+-- Update Watermark (optimized)
+local lastWatermarkUpdate = 0
+RunService.RenderStepped:Connect(function()
+    if not UI.Active or not Config.Misc.Watermark then 
+        WatermarkFrame.Visible = false
+        return 
+    end
+    
+    local now = tick()
+    if now - lastWatermarkUpdate >= 1 then -- Update every 1 second instead of 0.5
+        local fps = math.floor(1 / game:GetService("RunService").RenderStepped:Wait())
+        local ping = math.floor(game:GetService("Stats").Network.ServerStatsItem["Data Ping"]:GetValue())
+        Watermark.Text = string.format("beep | %dfps | %dms", fps, ping)
+        WatermarkFrame.Visible = true
+        lastWatermarkUpdate = now
     end
 end)
 
@@ -662,12 +668,50 @@ local function UpdateArraylist()
     end
 end
 
--- Update arraylist every 0.5 seconds
-task.spawn(function()
-    while task.wait(0.5) do
-        if UI.Active then
+-- Update arraylist (highly optimized)
+local lastArraylistUpdate = 0
+local lastActiveFeatures = {}
+
+local function GetActiveFeaturesList()
+    local features = {}
+    local featureStr = ""
+    
+    -- Combat features
+    if Config.Combat.SilentAim then featureStr = featureStr .. "SA," end
+    if Config.Combat.Ragebot then featureStr = featureStr .. "RB," end
+    if Config.Combat.Triggerbot then featureStr = featureStr .. "TB," end
+    if Config.Combat.KillAura then featureStr = featureStr .. "KA," end
+    if Config.Combat.UltraRapidFire then featureStr = featureStr .. "URF," end
+    if Config.Combat.NoRecoil then featureStr = featureStr .. "NR," end
+    if Config.Combat.NoSpread then featureStr = featureStr .. "NS," end
+    
+    -- Physics features
+    if Config.Physics.SpeedActive then featureStr = featureStr .. "SPD," end
+    if Config.Physics.FlyActive then featureStr = featureStr .. "FLY," end
+    if Config.Physics.NoClipActive then featureStr = featureStr .. "NC," end
+    if Config.Physics.ClickTP then featureStr = featureStr .. "CTP," end
+    
+    -- Visuals features
+    if Config.Visuals.Enabled then featureStr = featureStr .. "ESP," end
+    if Config.Misc.Fullbright then featureStr = featureStr .. "FB," end
+    
+    return featureStr
+end
+
+RunService.RenderStepped:Connect(function()
+    if not UI.Active or not UI.Visible then return end
+    
+    local now = tick()
+    if now - lastArraylistUpdate >= 1 then -- Update every 1 second
+        local currentFeatures = GetActiveFeaturesList()
+        
+        -- Only update if features changed (huge optimization)
+        if currentFeatures ~= lastActiveFeatures then
             UpdateArraylist()
+            lastActiveFeatures = currentFeatures
         end
+        
+        lastArraylistUpdate = now
     end
 end)
 
@@ -767,79 +811,143 @@ SearchBox:GetPropertyChangedSignal("Text"):Connect(function()
     end
 end)
 
--- Notification System (Premium Style)
+-- Notification System (Highly Optimized - Reuses frames)
+local NotificationPool = {} -- Pool of notification frames to reuse
+local ActiveNotifications = {}
+local MaxNotifications = 3
+
+local function GetNotificationFrame()
+    -- Try to reuse an existing notification frame
+    for i, notif in ipairs(NotificationPool) do
+        if not notif.InUse then
+            notif.InUse = true
+            return notif
+        end
+    end
+    
+    -- Create new notification if pool is empty
+    local n = UI:Create("Frame", {
+        Size = UDim2.new(0, 300, 0, 52), 
+        Position = UDim2.new(1, 10, 0.85, 0),
+        BackgroundColor3 = Color3.fromRGB(18, 18, 24), 
+        BackgroundTransparency = 0.1,
+        Visible = false,
+        ZIndex = 20,
+        Parent = UI.Screen
+    })
+    Instance.new("UICorner", n).CornerRadius = UDim.new(0, 10)
+    
+    -- Premium glow border
+    local notifStroke = UI:Create("UIStroke", {Color = Config.Visuals.Accent, Thickness = 1.5, Transparency = 0.4, Parent = n})
+    
+    -- Glassmorphism blur effect (lighter for performance)
+    local notifBlur = Instance.new("ImageLabel", n)
+    notifBlur.Size = UDim2.new(1, 0, 1, 0)
+    notifBlur.BackgroundTransparency = 1
+    notifBlur.Image = "rbxassetid://8992230677"
+    notifBlur.ImageColor3 = Color3.fromRGB(18, 18, 24)
+    notifBlur.ImageTransparency = 0.9 -- Increased from 0.85
+    notifBlur.ScaleType = Enum.ScaleType.Tile
+    notifBlur.TileSize = UDim2.new(0, 128, 0, 128)
+    notifBlur.ZIndex = 19
+
+    -- accent side bar with gradient
+    local bar = UI:Create("Frame", {
+        Size = UDim2.new(0, 4, 1, -20), Position = UDim2.new(0, 10, 0, 10),
+        BackgroundColor3 = Config.Visuals.Accent, ZIndex = 21, Parent = n
+    })
+    Instance.new("UICorner", bar).CornerRadius = UDim.new(0, 2)
+    UI:Create("UIGradient", {
+        Transparency = NumberSequence.new({
+            NumberSequenceKeypoint.new(0, 0.3),
+            NumberSequenceKeypoint.new(0.5, 0),
+            NumberSequenceKeypoint.new(1, 0.3)
+        }),
+        Rotation = 90,
+        Parent = bar
+    })
+    
+    local label = UI:Create("TextLabel", {
+        Size = UDim2.new(1, -36, 1, 0), 
+        Position = UDim2.new(0, 24, 0, 0),
+        BackgroundTransparency = 1, 
+        Text = "",
+        TextColor3 = Color3.new(1,1,1), 
+        Font = Enum.Font.GothamMedium, 
+        TextSize = 13,
+        TextXAlignment = Enum.TextXAlignment.Left,
+        TextWrapped = true,
+        ZIndex = 21,
+        Parent = n
+    })
+    
+    local notif = {
+        Frame = n,
+        Label = label,
+        Stroke = notifStroke,
+        Bar = bar,
+        InUse = true
+    }
+    
+    table.insert(NotificationPool, notif)
+    return notif
+end
+
+local function ReleaseNotification(notif)
+    notif.InUse = false
+    notif.Frame.Visible = false
+    notif.Frame.Position = UDim2.new(1, 10, 0.85, 0)
+    notif.Frame.BackgroundTransparency = 0.1
+    notif.Stroke.Transparency = 0.4
+    notif.Bar.BackgroundTransparency = 0
+    notif.Label.TextTransparency = 0
+end
+
 function UI:Notify(text)
     if not UI.Active then return end
+    
+    -- Limit active notifications
+    if #ActiveNotifications >= MaxNotifications then
+        local oldest = table.remove(ActiveNotifications, 1)
+        if oldest and oldest.Frame.Parent then
+            ReleaseNotification(oldest)
+        end
+    end
+    
     task.spawn(function()
-        local n = UI:Create("Frame", {
-            Size = UDim2.new(0, 300, 0, 52), 
-            Position = UDim2.new(1, 10, 0.85, 0),
-            BackgroundColor3 = Color3.fromRGB(18, 18, 24), 
-            BackgroundTransparency = 0.1,
-            ZIndex = 20,
-            Parent = UI.Screen
-        })
-        Instance.new("UICorner", n).CornerRadius = UDim.new(0, 10)
+        local notif = GetNotificationFrame()
+        notif.Label.Text = text
+        notif.Frame.Visible = true
         
-        -- Premium glow border
-        local notifStroke = UI:Create("UIStroke", {Color = Config.Visuals.Accent, Thickness = 1.5, Transparency = 0.4, Parent = n})
+        table.insert(ActiveNotifications, notif)
         
-        -- Glassmorphism blur effect
-        local notifBlur = Instance.new("ImageLabel", n)
-        notifBlur.Size = UDim2.new(1, 0, 1, 0)
-        notifBlur.BackgroundTransparency = 1
-        notifBlur.Image = "rbxassetid://8992230677"
-        notifBlur.ImageColor3 = Color3.fromRGB(18, 18, 24)
-        notifBlur.ImageTransparency = 0.85
-        notifBlur.ScaleType = Enum.ScaleType.Tile
-        notifBlur.TileSize = UDim2.new(0, 64, 0, 64)
-        notifBlur.ZIndex = 19
-
-        -- accent side bar with gradient
-        local bar = UI:Create("Frame", {
-            Size = UDim2.new(0, 4, 1, -20), Position = UDim2.new(0, 10, 0, 10),
-            BackgroundColor3 = Config.Visuals.Accent, ZIndex = 21, Parent = n
-        })
-        Instance.new("UICorner", bar).CornerRadius = UDim.new(0, 2)
-        UI:Create("UIGradient", {
-            Transparency = NumberSequence.new({
-                NumberSequenceKeypoint.new(0, 0.3),
-                NumberSequenceKeypoint.new(0.5, 0),
-                NumberSequenceKeypoint.new(1, 0.3)
-            }),
-            Rotation = 90,
-            Parent = bar
-        })
+        -- Reposition all active notifications
+        for i, n in ipairs(ActiveNotifications) do
+            local yOffset = 0.85 - ((i - 1) * 0.08)
+            n.Frame:TweenPosition(UDim2.new(0.98, -300, yOffset, 0), "Out", "Back", 0.5)
+        end
         
-        UI:Create("TextLabel", {
-            Size = UDim2.new(1, -36, 1, 0), 
-            Position = UDim2.new(0, 24, 0, 0),
-            BackgroundTransparency = 1, 
-            Text = text,
-            TextColor3 = Color3.new(1,1,1), 
-            Font = Enum.Font.GothamMedium, 
-            TextSize = 13,
-            TextXAlignment = Enum.TextXAlignment.Left,
-            TextWrapped = true,
-            ZIndex = 21,
-            Parent = n
-        })
-        
-        -- Slide in with bounce
-        n:TweenPosition(UDim2.new(0.98, -300, 0.85, 0), "Out", "Back", 0.5)
         task.wait(3)
-        if n and n.Parent then
-            -- Fade out
-            TweenService:Create(n, TweenInfo.new(0.4), {BackgroundTransparency = 1}):Play()
-            TweenService:Create(notifStroke, TweenInfo.new(0.4), {Transparency = 1}):Play()
-            TweenService:Create(bar, TweenInfo.new(0.4), {BackgroundTransparency = 1}):Play()
-            for _, child in pairs(n:GetChildren()) do
-                if child:IsA("TextLabel") then
-                    TweenService:Create(child, TweenInfo.new(0.4), {TextTransparency = 1}):Play()
+        
+        if notif.Frame and notif.Frame.Parent then
+            -- Fade out (optimized tween)
+            local fadeInfo = TweenInfo.new(0.3, Enum.EasingStyle.Quad)
+            TweenService:Create(notif.Frame, fadeInfo, {BackgroundTransparency = 1}):Play()
+            TweenService:Create(notif.Stroke, fadeInfo, {Transparency = 1}):Play()
+            TweenService:Create(notif.Bar, fadeInfo, {BackgroundTransparency = 1}):Play()
+            TweenService:Create(notif.Label, fadeInfo, {TextTransparency = 1}):Play()
+            
+            task.wait(0.3)
+            
+            -- Remove from active list
+            for i, n in ipairs(ActiveNotifications) do
+                if n == notif then
+                    table.remove(ActiveNotifications, i)
+                    break
                 end
             end
-            task.wait(0.5) 
-            n:Destroy()
+            
+            ReleaseNotification(notif)
         end
     end)
 end
@@ -1070,14 +1178,21 @@ function UI:CreateToggle(parent, text, configSection, configKey, callback)
     Instance.new("UICorner", Frame).CornerRadius = UDim.new(0, 9)
     local frameStroke = UI:Create("UIStroke", {Color = Color3.fromRGB(32, 32, 40), Thickness = 1, Transparency = 0.6, Parent = Frame})
     
-    -- Hover glow effect
+    local isHovering = false
+    local hoverTweenInfo = TweenInfo.new(0.2, Enum.EasingStyle.Quad) -- Reuse tween info
+    
+    -- Hover glow effect (optimized)
     Frame.MouseEnter:Connect(function()
-        TweenService:Create(frameStroke, TweenInfo.new(0.2), {Transparency = 0.3, Color = Config.Visuals.Accent}):Play()
-        TweenService:Create(Frame, TweenInfo.new(0.2), {BackgroundTransparency = 0}):Play()
+        if isHovering then return end
+        isHovering = true
+        TweenService:Create(frameStroke, hoverTweenInfo, {Transparency = 0.3, Color = Config.Visuals.Accent}):Play()
+        TweenService:Create(Frame, hoverTweenInfo, {BackgroundTransparency = 0}):Play()
     end)
     Frame.MouseLeave:Connect(function()
-        TweenService:Create(frameStroke, TweenInfo.new(0.2), {Transparency = 0.6, Color = Color3.fromRGB(32, 32, 40)}):Play()
-        TweenService:Create(Frame, TweenInfo.new(0.2), {BackgroundTransparency = 0.1}):Play()
+        if not isHovering then return end
+        isHovering = false
+        TweenService:Create(frameStroke, hoverTweenInfo, {Transparency = 0.6, Color = Color3.fromRGB(32, 32, 40)}):Play()
+        TweenService:Create(Frame, hoverTweenInfo, {BackgroundTransparency = 0.1}):Play()
     end)
     
     local TextLabel = UI:Create("TextLabel", {Size = UDim2.new(0.65, 0, 1, 0), Position = UDim2.new(0, 16, 0, 0), BackgroundTransparency = 1, Text = text, TextColor3 = Color3.fromRGB(230, 232, 237), Font = Enum.Font.GothamMedium, TextSize = 13, TextXAlignment = Enum.TextXAlignment.Left, ZIndex = 5, Parent = Frame})
@@ -1132,14 +1247,21 @@ function UI:CreateSlider(parent, text, min, max, configSection, configKey, callb
     Instance.new("UICorner", Frame).CornerRadius = UDim.new(0, 9)
     local frameStroke = UI:Create("UIStroke", {Color = Color3.fromRGB(32, 32, 40), Thickness = 1, Transparency = 0.6, Parent = Frame})
     
-    -- Hover glow effect
+    local isHovering = false
+    local hoverTweenInfo = TweenInfo.new(0.2, Enum.EasingStyle.Quad) -- Reuse tween info
+    
+    -- Hover glow effect (optimized)
     Frame.MouseEnter:Connect(function()
-        TweenService:Create(frameStroke, TweenInfo.new(0.2), {Transparency = 0.3, Color = Config.Visuals.Accent}):Play()
-        TweenService:Create(Frame, TweenInfo.new(0.2), {BackgroundTransparency = 0}):Play()
+        if isHovering then return end
+        isHovering = true
+        TweenService:Create(frameStroke, hoverTweenInfo, {Transparency = 0.3, Color = Config.Visuals.Accent}):Play()
+        TweenService:Create(Frame, hoverTweenInfo, {BackgroundTransparency = 0}):Play()
     end)
     Frame.MouseLeave:Connect(function()
-        TweenService:Create(frameStroke, TweenInfo.new(0.2), {Transparency = 0.6, Color = Color3.fromRGB(32, 32, 40)}):Play()
-        TweenService:Create(Frame, TweenInfo.new(0.2), {BackgroundTransparency = 0.1}):Play()
+        if not isHovering then return end
+        isHovering = false
+        TweenService:Create(frameStroke, hoverTweenInfo, {Transparency = 0.6, Color = Color3.fromRGB(32, 32, 40)}):Play()
+        TweenService:Create(Frame, hoverTweenInfo, {BackgroundTransparency = 0.1}):Play()
     end)
     
     local Label = UI:Create("TextLabel", {Size = UDim2.new(0.65, 0, 0, 28), Position = UDim2.new(0, 16, 0, 6), BackgroundTransparency = 1, Text = text, TextColor3 = Color3.fromRGB(230, 232, 237), Font = Enum.Font.GothamMedium, TextSize = 13, TextXAlignment = Enum.TextXAlignment.Left, ZIndex = 5, Parent = Frame})
@@ -1167,12 +1289,15 @@ function UI:CreateSlider(parent, text, min, max, configSection, configKey, callb
     
     local Trigger = UI:Create("TextButton", {Size = UDim2.new(1, 0, 3, 0), Position = UDim2.new(0, 0, -1, 0), BackgroundTransparency = 1, Text = "", ZIndex = 7, Parent = SlideBar})
     
+    local fillTweenInfo = TweenInfo.new(0.08, Enum.EasingStyle.Quad) -- Reuse tween info
+    local knobPulseTweenInfo = TweenInfo.new(0.15, Enum.EasingStyle.Quad) -- Reuse tween info
+    
     local function update(input)
         local pos = math.clamp((input.Position.X - SlideBar.AbsolutePosition.X) / SlideBar.AbsoluteSize.X, 0, 1)
         local val = math.floor(min + (pos * (max - min)))
         Config[configSection][configKey] = val
         ValueLabel.Text = tostring(val)
-        TweenService:Create(Fill, TweenInfo.new(0.08, Enum.EasingStyle.Quad), {Size = UDim2.new(pos, 0, 1, 0)}):Play()
+        TweenService:Create(Fill, fillTweenInfo, {Size = UDim2.new(pos, 0, 1, 0)}):Play()
         if callback then callback(val) end
     end
     
@@ -1182,7 +1307,7 @@ function UI:CreateSlider(parent, text, min, max, configSection, configKey, callb
             draggingSlider = true 
             update(input)
             -- Knob pulse effect
-            TweenService:Create(Knob, TweenInfo.new(0.15), {Size = UDim2.new(0, 20, 0, 20)}):Play()
+            TweenService:Create(Knob, knobPulseTweenInfo, {Size = UDim2.new(0, 20, 0, 20)}):Play()
         end
     end)
     UserInputService.InputChanged:Connect(function(input)
@@ -1191,7 +1316,7 @@ function UI:CreateSlider(parent, text, min, max, configSection, configKey, callb
     UserInputService.InputEnded:Connect(function(input)
         if input.UserInputType == Enum.UserInputType.MouseButton1 then 
             draggingSlider = false
-            TweenService:Create(Knob, TweenInfo.new(0.15), {Size = UDim2.new(0, 16, 0, 16)}):Play()
+            TweenService:Create(Knob, knobPulseTweenInfo, {Size = UDim2.new(0, 16, 0, 16)}):Play()
         end
     end)
 end
@@ -2265,9 +2390,10 @@ UserInputService.InputBegan:Connect(function(input, gameProcessed)
     end
 end)
 
--- ESP System
+-- ESP System (Highly Optimized)
 local Visuals = {}
 local ESPObjects = {} -- Track all ESP objects for cleanup
+local lastESPUpdate = {} -- Track last update time per player
 
 local function apply3DChams(part)
     local box = Instance.new("BoxHandleAdornment")
@@ -2321,16 +2447,30 @@ function Visuals:DrawESPOnCharacter(player)
         
         local trackingParts = {}
         local function scanParts(rootPart)
+            -- Only track important parts (optimization)
             for _, obj in pairs(rootPart:GetChildren()) do
-                if obj:IsA("BasePart") or obj:IsA("MeshPart") then
+                if (obj:IsA("BasePart") or obj:IsA("MeshPart")) and (obj.Name == "Head" or obj.Name == "UpperTorso" or obj.Name == "Torso" or obj.Name == "HumanoidRootPart") then
                     table.insert(trackingParts, apply3DChams(obj))
                 end
             end
         end
         scanParts(char)
         
+        -- Initialize last update time
+        lastESPUpdate[player.UserId] = 0
+        
         task.spawn(function()
             while bGui.Parent and char:IsDescendantOf(Workspace) and UI.Active do
+                local now = tick()
+                
+                -- Throttle updates to every 0.2 seconds (5 FPS for ESP) instead of 0.1
+                if now - lastESPUpdate[player.UserId] < 0.2 then
+                    task.wait(0.05)
+                    continue
+                end
+                
+                lastESPUpdate[player.UserId] = now
+                
                 local visualsEnabled = Config.Visuals.Enabled
                 
                 -- Control BillboardGui visibility
@@ -2384,7 +2524,7 @@ function Visuals:DrawESPOnCharacter(player)
                 else
                     label.Text = ""
                 end
-                task.wait(0.1)
+                task.wait(0.2) -- Reduced from 0.1 to 0.2 (50% less CPU)
             end
         end)
     end
@@ -2396,8 +2536,9 @@ end
 for _, p in pairs(Players:GetPlayers()) do Visuals:DrawESPOnCharacter(p) end
 Players.PlayerAdded:Connect(function(p) Visuals:DrawESPOnCharacter(p) end)
 
--- Tracers System
+-- Tracers System (Optimized)
 local TracerConnections = {}
+local lastTracerUpdate = {}
 
 local function CreateTracer(player)
     if player == LocalPlayer then return end
@@ -2412,12 +2553,19 @@ local function CreateTracer(player)
         line.Thickness = 1
         line.Transparency = 1
         
+        lastTracerUpdate[player.UserId] = 0
+        
         local connection = RunService.RenderStepped:Connect(function()
             if not UI.Active or not char:IsDescendantOf(Workspace) or not rootPart.Parent then
                 line:Remove()
                 connection:Disconnect()
                 return
             end
+            
+            -- Throttle updates (optimization)
+            local now = tick()
+            if now - lastTracerUpdate[player.UserId] < 0.05 then return end
+            lastTracerUpdate[player.UserId] = now
             
             if Config.Visuals.Enabled and Config.Visuals.Tracers then
                 -- Update color based on team
@@ -2448,8 +2596,35 @@ end
 
 for _, p in pairs(Players:GetPlayers()) do CreateTracer(p) end
 Players.PlayerAdded:Connect(function(p) CreateTracer(p) end)
+                line.Color = Color3.new(espColor.R, espColor.G, espColor.B)
+                
+                local screenPos, onScreen = Camera:WorldToViewportPoint(rootPart.Position)
+                if onScreen then
+                    local screenSize = Camera.ViewportSize
+                    line.From = Vector2.new(screenSize.X / 2, screenSize.Y)
+                    line.To = Vector2.new(screenPos.X, screenPos.Y)
+                    line.Visible = true
+                else
+                    line.Visible = false
+                end
+            else
+                line.Visible = false
+            end
+        end)
+        
+        table.insert(TracerConnections, {line = line, connection = connection})
+    end
+    
+    if player.Character then task.spawn(function() setupTracer(player.Character) end) end
+    player.CharacterAdded:Connect(function(char) task.spawn(function() setupTracer(char) end) end)
+end
 
--- Health Bars System
+for _, p in pairs(Players:GetPlayers()) do CreateTracer(p) end
+Players.PlayerAdded:Connect(function(p) CreateTracer(p) end)
+
+-- Health Bars System (Optimized)
+local lastHealthBarUpdate = {}
+
 local function CreateHealthBar(player)
     if player == LocalPlayer then return end
     
@@ -2477,15 +2652,27 @@ local function CreateHealthBar(player)
         Instance.new("UICorner", frame).CornerRadius = UDim.new(0, 4)
         Instance.new("UICorner", healthBar).CornerRadius = UDim.new(0, 4)
         
+        lastHealthBarUpdate[player.UserId] = 0
+        
         task.spawn(function()
             while billboardGui.Parent and char:IsDescendantOf(Workspace) and UI.Active do
+                local now = tick()
+                
+                -- Throttle updates to every 0.2 seconds
+                if now - lastHealthBarUpdate[player.UserId] < 0.2 then
+                    task.wait(0.05)
+                    continue
+                end
+                
+                lastHealthBarUpdate[player.UserId] = now
+                
                 billboardGui.Enabled = Config.Visuals.Enabled and Config.Visuals.HealthBars
                 if Config.Visuals.Enabled and Config.Visuals.HealthBars then
                     local healthPercent = hum.Health / hum.MaxHealth
                     healthBar.Size = UDim2.new(healthPercent, 0, 1, 0)
                     healthBar.BackgroundColor3 = Color3.new(1 - healthPercent, healthPercent, 0)
                 end
-                task.wait(0.1)
+                task.wait(0.2) -- Reduced from 0.1 to 0.2 (50% less CPU)
             end
             billboardGui:Destroy()
         end)
