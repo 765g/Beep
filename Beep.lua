@@ -1571,6 +1571,7 @@ local aimHoldActive = false
 local currentAimTarget = nil        -- Track current aim target for switcher
 local lastAimTargetHealth = nil     -- Track health to detect kills
 local targetSwitchCooldown = 0      -- Cooldown to prevent spam switching
+local holdTargetLock = nil          -- PERSISTENT target for Hold to Aim mode
 
 -- Hold to Aim Input Handler
 UserInputService.InputBegan:Connect(function(input, gameProcessed)
@@ -1590,6 +1591,8 @@ UserInputService.InputEnded:Connect(function(input)
     if (Config.Combat.AimHoldKey == "MouseButton2" and input.UserInputType == Enum.UserInputType.MouseButton2) or
        (Config.Combat.AimHoldKey ~= "MouseButton2" and input.KeyCode.Name == Config.Combat.AimHoldKey) then
         aimHoldActive = false
+        -- Clear hold target lock when releasing the key
+        holdTargetLock = nil
     end
 end)
 
@@ -1630,19 +1633,49 @@ RunService.RenderStepped:Connect(function()
     if shouldAim then
         local target = nil
         
-        -- Check if we have a locked target and if it's still valid
-        if Config.Combat.LockedTarget then
-            if Combat:IsTargetValid(Config.Combat.LockedTarget) then
-                target = Config.Combat.LockedTarget
-            else
-                Config.Combat.LockedTarget = nil
-                currentAimTarget = nil
-                lastAimTargetHealth = nil
-                UI:Notify("Target Lost")
+        -- HOLD TO AIM MODE: Persistent target lock
+        if Config.Combat.HoldToAim and aimHoldActive then
+            -- Check if we have a persistent hold target
+            if holdTargetLock then
+                -- Verify target is still valid (alive)
+                if holdTargetLock.Character then
+                    local hum = holdTargetLock.Character:FindFirstChildOfClass("Humanoid")
+                    local part = holdTargetLock.Character:FindFirstChild(Config.Combat.TargetPart)
+                    if hum and hum.Health > 0 and part then
+                        target = holdTargetLock
+                    else
+                        -- Target died, clear lock
+                        holdTargetLock = nil
+                    end
+                else
+                    -- Character doesn't exist, clear lock
+                    holdTargetLock = nil
+                end
             end
+            
+            -- If no hold target locked yet, find one
+            if not holdTargetLock then
+                holdTargetLock = Combat:GetClosestPlayer()
+                if holdTargetLock then
+                    target = holdTargetLock
+                end
+            end
+        -- NORMAL MODE or LOCK KEY MODE
         else
-            -- No locked target, get closest player
-            target = Combat:GetClosestPlayer()
+            -- Check if we have a locked target (Q key) and if it's still valid
+            if Config.Combat.LockedTarget then
+                if Combat:IsTargetValid(Config.Combat.LockedTarget) then
+                    target = Config.Combat.LockedTarget
+                else
+                    Config.Combat.LockedTarget = nil
+                    currentAimTarget = nil
+                    lastAimTargetHealth = nil
+                    UI:Notify("Target Lost")
+                end
+            else
+                -- No locked target, get closest player
+                target = Combat:GetClosestPlayer()
+            end
         end
         
         -- Update current target for switcher
