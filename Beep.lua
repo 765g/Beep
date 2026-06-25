@@ -686,42 +686,81 @@ end)
 function UI:Notify(text)
     if not UI.Active then return end
     task.spawn(function()
+        -- Modern minimal notification
         local n = UI:Create("Frame", {
-            Size = UDim2.new(0, 290, 0, 48), 
-            Position = UDim2.new(1, 10, 0.8, 0),
-            BackgroundColor3 = Color3.fromRGB(22, 23, 28), 
+            Size = UDim2.new(0, 0, 0, 38), 
+            Position = UDim2.new(1, 10, 0.85, 0),
+            BackgroundColor3 = Color3.fromRGB(18, 18, 22),
+            BackgroundTransparency = 0.1,
+            AutomaticSize = Enum.AutomaticSize.X,
             ZIndex = 20,
             Parent = UI.Screen
         })
-        Instance.new("UICorner", n).CornerRadius = UDim.new(0, 10)
-        UI:Create("UIStroke", {Color = Config.Visuals.Accent, Thickness = 1.5, Transparency = 0.3, Parent = n})
-
-        -- accent side bar
-        local bar = UI:Create("Frame", {
-            Size = UDim2.new(0, 4, 1, -16), Position = UDim2.new(0, 8, 0, 8),
-            BackgroundColor3 = Config.Visuals.Accent, ZIndex = 21, Parent = n
-        })
-        Instance.new("UICorner", bar).CornerRadius = UDim.new(1, 0)
+        Instance.new("UICorner", n).CornerRadius = UDim.new(0, 8)
         
-        UI:Create("TextLabel", {
-            Size = UDim2.new(1, -30, 1, 0), 
-            Position = UDim2.new(0, 20, 0, 0),
-            BackgroundTransparency = 1, 
-            Text = text,
-            TextColor3 = Color3.new(1,1,1), 
-            Font = Enum.Font.GothamMedium, 
-            TextSize = 12,
-            TextXAlignment = Enum.TextXAlignment.Left,
-            TextWrapped = true,
-            ZIndex = 21,
+        -- Subtle glow effect
+        UI:Create("UIStroke", {
+            Color = Config.Visuals.Accent, 
+            Thickness = 1, 
+            Transparency = 0.7, 
             Parent = n
         })
         
-        n:TweenPosition(UDim2.new(0.98, -290, 0.8, 0), "Out", "Back", 0.4)
-        task.wait(3)
+        -- Content container with padding
+        local content = UI:Create("Frame", {
+            Size = UDim2.new(1, 0, 1, 0),
+            BackgroundTransparency = 1,
+            ZIndex = 21,
+            Parent = n
+        })
+        UI:Create("UIPadding", {
+            PaddingLeft = UDim.new(0, 12), 
+            PaddingRight = UDim.new(0, 12),
+            PaddingTop = UDim.new(0, 0),
+            PaddingBottom = UDim.new(0, 0),
+            Parent = content
+        })
+        
+        -- Dot indicator
+        local dot = UI:Create("Frame", {
+            Size = UDim2.new(0, 6, 0, 6),
+            Position = UDim2.new(0, 0, 0.5, -3),
+            BackgroundColor3 = Config.Visuals.Accent,
+            BorderSizePixel = 0,
+            ZIndex = 22,
+            Parent = content
+        })
+        Instance.new("UICorner", dot).CornerRadius = UDim.new(1, 0)
+        
+        -- Text label
+        local label = UI:Create("TextLabel", {
+            Size = UDim2.new(1, -12, 1, 0), 
+            Position = UDim2.new(0, 12, 0, 0),
+            BackgroundTransparency = 1, 
+            Text = text,
+            TextColor3 = Color3.fromRGB(240, 240, 245), 
+            Font = Enum.Font.GothamBold, 
+            TextSize = 13,
+            TextXAlignment = Enum.TextXAlignment.Left,
+            TextWrapped = false,
+            AutomaticSize = Enum.AutomaticSize.X,
+            ZIndex = 22,
+            Parent = content
+        })
+        
+        -- Slide in animation (smoother)
+        n:TweenPosition(UDim2.new(0.98, -n.AbsoluteSize.X, 0.85, 0), "Out", "Quint", 0.3)
+        
+        -- Auto dismiss after 2.5 seconds
+        task.wait(2.5)
         if n and n.Parent then
-            n:TweenPosition(UDim2.new(1, 10, 0.8, 0), "In", "Quad", 0.4)
-            task.wait(0.5) 
+            -- Fade out
+            TweenService:Create(n, TweenInfo.new(0.3, Enum.EasingStyle.Quad), {
+                BackgroundTransparency = 1
+            }):Play()
+            TweenService:Create(label, TweenInfo.new(0.3), {TextTransparency = 1}):Play()
+            TweenService:Create(dot, TweenInfo.new(0.3), {BackgroundTransparency = 1}):Play()
+            task.wait(0.3)
             n:Destroy()
         end
     end)
