@@ -86,7 +86,11 @@ local Config = {
         RagebotNoClip = false,
         RagebotGameProfile = "Auto",
         RagebotFaceTarget = false,
-        RagebotIgnoreImmune = false
+        RagebotIgnoreImmune = false,
+        -- Arsenal Knife Mode
+        ArsenalKnifeMode = false,      -- Arsenal instant-kill knife backstab
+        ArsenalKnifeDistance = 8,      -- Distance behind enemy to teleport
+        ArsenalKnifeDelay = 0.5        -- Delay between kills (seconds)
     },
     Physics = {
         Speed = 1,
@@ -534,6 +538,7 @@ local function UpdateArraylist()
     
     if Config.Combat.SilentAim then table.insert(activeFeatures, {name = "Aim Assist", color = Config.Visuals.Accent, key = Config.Combat.LockKey}) end
     if Config.Combat.Ragebot then table.insert(activeFeatures, {name = "Ragebot", color = Color3.fromRGB(255, 80, 80), key = ""}) end
+    if Config.Combat.ArsenalKnifeMode then table.insert(activeFeatures, {name = "Arsenal Knife", color = Color3.fromRGB(255, 150, 50), key = ""}) end
     if Config.Combat.Triggerbot then table.insert(activeFeatures, {name = "Triggerbot", color = Color3.fromRGB(255, 200, 80), key = ""}) end
     if Config.Combat.KillAura then table.insert(activeFeatures, {name = "Kill Aura", color = Color3.fromRGB(255, 100, 100), key = ""}) end
     if Config.Combat.UltraRapidFire then table.insert(activeFeatures, {name = "Ultra Rapid Fire", color = Color3.fromRGB(255, 150, 50), key = ""}) end
@@ -1797,6 +1802,118 @@ function Ragebot:GetTarget()
     return best
 end
 
+-- ===== ARSENAL KNIFE MODE (Instant Kill Backstab) =====
+local lastArsenalKnifeTime = 0
+
+RunService.RenderStepped:Connect(function(dt)
+    if not UI.Active or not Config.Combat.ArsenalKnifeMode then
+        return
+    end
+    
+    -- Check cooldown
+    local currentTime = tick()
+    if currentTime - lastArsenalKnifeTime < Config.Combat.ArsenalKnifeDelay then
+        return
+    end
+    
+    -- Get my character
+    local myChar = LocalPlayer.Character
+    if not myChar then return end
+    local myRoot = myChar:FindFirstChild("HumanoidRootPart")
+    local myHum = myChar:FindFirstChildOfClass("Humanoid")
+    if not myRoot or not myHum or myHum.Health <= 0 then return end
+    
+    -- Find knife tool (Arsenal uses "Knife" or similar)
+    local knifeTool = nil
+    for _, tool in pairs(myChar:GetChildren()) do
+        if tool:IsA("Tool") and (tool.Name:lower():find("knife") or tool.Name:lower():find("melee")) then
+            knifeTool = tool
+            break
+        end
+    end
+    
+    -- If no knife equipped, try to find it in backpack and equip it
+    if not knifeTool then
+        for _, tool in pairs(LocalPlayer.Backpack:GetChildren()) do
+            if tool:IsA("Tool") and (tool.Name:lower():find("knife") or tool.Name:lower():find("melee")) then
+                myHum:EquipTool(tool)
+                knifeTool = tool
+                task.wait(0.1) -- Wait for equip
+                break
+            end
+        end
+    end
+    
+    if not knifeTool then return end -- No knife available
+    
+    -- Find closest enemy
+    local closestTarget = nil
+    local closestDist = math.huge
+    
+    for _, player in pairs(Players:GetPlayers()) do
+        if player ~= LocalPlayer and player.Character then
+            -- Team check
+            if Config.Combat.RagebotTeamCheck and not IsEnemy(player, true) then
+                continue
+            end
+            
+            local targetChar = player.Character
+            local targetRoot = targetChar:FindFirstChild("HumanoidRootPart")
+            local targetHum = targetChar:FindFirstChildOfClass("Humanoid")
+            
+            if targetRoot and targetHum and targetHum.Health > 0 then
+                local dist = (myRoot.Position - targetRoot.Position).Magnitude
+                if dist < closestDist and dist <= 100 then -- Max 100 studs
+                    closestTarget = {player = player, root = targetRoot}
+                    closestDist = dist
+                end
+            end
+        end
+    end
+    
+    if not closestTarget then return end
+    
+    -- Teleport behind the enemy
+    local targetPos = closestTarget.root.Position
+    local targetLook = closestTarget.root.CFrame.LookVector
+    local behindPos = targetPos - (targetLook * Config.Combat.ArsenalKnifeDistance)
+    
+    -- Teleport with NoClip temporarily
+    local oldCanCollide = {}
+    for _, part in pairs(myChar:GetDescendants()) do
+        if part:IsA("BasePart") then
+            oldCanCollide[part] = part.CanCollide
+            part.CanCollide = false
+        end
+    end
+    
+    -- Face the enemy's back and teleport
+    myRoot.CFrame = CFrame.new(behindPos, targetPos)
+    pcall(function() myRoot.AssemblyLinearVelocity = Vector3.new(0, 0, 0) end)
+    
+    task.wait(0.05)
+    
+    -- Activate knife (backstab)
+    if knifeTool and knifeTool.Parent == myChar then
+        knifeTool:Activate()
+        task.wait(0.1)
+        knifeTool:Deactivate()
+    end
+    
+    -- Restore collision
+    task.wait(0.1)
+    for part, canCollide in pairs(oldCanCollide) do
+        if part and part.Parent then
+            part.CanCollide = canCollide
+        end
+    end
+    
+    lastArsenalKnifeTime = tick()
+    
+    -- Notify
+    UI:Notify("Arsenal Knife: Backstabbed " .. closestTarget.player.DisplayName)
+end)
+
 RunService.RenderStepped:Connect(function(dt)
     if not UI.Active or not Config.Combat.Ragebot then
         return
@@ -2833,6 +2950,25 @@ UI:CreateSlider(CombatPage, "Ragebot Keep Distance", 2, 30, "Combat", "RagebotTP
 UI:CreateToggle(CombatPage, "Ragebot NoClip (pass walls)", "Combat", "RagebotNoClip")
 UI:CreateToggle(CombatPage, "Ragebot Face Target (body aim)", "Combat", "RagebotFaceTarget")
 UI:CreateToggle(CombatPage, "Ragebot Ignore Immune (ForceField)", "Combat", "RagebotIgnoreImmune")
+
+-- Arsenal Knife Mode Controls
+UI:CreateToggle(CombatPage, "Arsenal Knife Mode (Backstab Instakill)", "Combat", "ArsenalKnifeMode")
+UI:CreateSlider(CombatPage, "Arsenal Knife Distance (behind enemy)", 4, 15, "Combat", "ArsenalKnifeDistance")
+UI:CreateSlider(CombatPage, "Arsenal Knife Delay (s)", 0.3, 2, "Combat", "ArsenalKnifeDelay")
+
+-- Info Label: Arsenal Knife Mode
+local ArsenalKnifeInfoFrame = UI:Create("Frame", {Size = UDim2.new(1, -10, 0, 65), BackgroundColor3 = Color3.fromRGB(25, 25, 32), ZIndex = 4, Parent = CombatPage})
+Instance.new("UICorner", ArsenalKnifeInfoFrame).CornerRadius = UDim.new(0, 8)
+local ArsenalKnifeInfoStroke = UI:Create("UIStroke", {Color = Color3.fromRGB(255, 150, 50), Thickness = 1.5, Transparency = 0.3, Parent = ArsenalKnifeInfoFrame})
+local ArsenalKnifeInfoLabel = UI:Create("TextLabel", {
+    Size = UDim2.new(1, -20, 1, 0), Position = UDim2.new(0, 10, 0, 0),
+    BackgroundTransparency = 1, 
+    Text = "⚔️ Arsenal Knife Mode: Auto-equips knife, teleports behind enemies, and backstabs for instant kill. Works best in Arsenal!",
+    TextColor3 = Color3.fromRGB(255, 200, 120), 
+    Font = Enum.Font.GothamBold, TextSize = 11,
+    TextXAlignment = Enum.TextXAlignment.Center, TextWrapped = true,
+    ZIndex = 5, Parent = ArsenalKnifeInfoFrame
+})
 
 -- Visual Controls
 UI:CreateToggle(VisualsPage, "Enable ESP", "Visuals", "Enabled")
