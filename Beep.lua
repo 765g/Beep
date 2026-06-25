@@ -2,7 +2,7 @@
 -- Universal ESP, Aimbot & Physics Controller
 
 -- VERSION CONTROL (Update this for each new version)
-local BEEP_VERSION = "v4.2.1"
+local BEEP_VERSION = "v4.2.2"
 
 local StartTime = tick()
 if not game:IsLoaded() then
@@ -114,9 +114,7 @@ local Config = {
         Watermark = true,
         ThemeColor = 1,
         NoClipToggleKey = "F2",
-        PanicKey = "End",
-        GodMode = false,  -- God Mode (works only in certain games)
-        AntiHit = false   -- Anti-Hit (dodge bullets automatically)
+        PanicKey = "End"
     },
     UI = {
         ThemeColors = {
@@ -1735,124 +1733,6 @@ RunService.Stepped:Connect(function()
     end
 end)
 
--- ===== GOD MODE & ANTI-HIT SYSTEM =====
--- God Mode: Works only in games with client-sided health
--- Anti-Hit: Dodges bullets/attacks automatically (works in most games)
-
-local GodModeCompatibleGames = {
-    [2788229376] = "Da Hood",
-    [7213786345] = "Hood Modded", 
-    [3233893879] = "Bad Business",
-    [4282985734] = "1v1 Combat Arena",
-    [292439477] = "Phantom Forces",
-    [113491250] = "Typical Colors 2",
-    -- Arsenal removed - server-sided health
-}
-
-local currentGameName = GodModeCompatibleGames[game.PlaceId]
-local isGodModeCompatible = currentGameName ~= nil
-local godModeActive = false
-local antiHitActive = false
-
--- Show compatibility message when God Mode is toggled
-local godModeConnection = nil
-godModeConnection = RunService.Heartbeat:Connect(function()
-    if not UI.Active then return end
-    
-    -- God Mode Logic
-    if Config.Misc.GodMode then
-        if isGodModeCompatible then
-            local char = LocalPlayer.Character
-            if char then
-                local hum = char:FindFirstChildOfClass("Humanoid")
-                if hum then
-                    if not godModeActive then
-                        godModeActive = true
-                        UI:Notify("God Mode: ON (" .. currentGameName .. " compatible)")
-                    end
-                    -- Keep health at max
-                    if hum.Health < hum.MaxHealth then
-                        hum.Health = hum.MaxHealth
-                    end
-                end
-            end
-        else
-            if not godModeActive then
-                godModeActive = true
-                local gameName = game:GetService("MarketplaceService"):GetProductInfo(game.PlaceId).Name
-                UI:Notify("God Mode: Not compatible with " .. gameName .. " (server-sided)")
-            end
-        end
-    else
-        if godModeActive then
-            godModeActive = false
-            UI:Notify("God Mode: OFF")
-        end
-    end
-end)
-
--- Anti-Hit System (works in most games)
--- Detects incoming damage and dodges/teleports slightly
-local lastHealth = nil
-local antiHitCooldown = 0
-
-RunService.Heartbeat:Connect(function(dt)
-    if not UI.Active or not Config.Misc.AntiHit then 
-        antiHitActive = false
-        return 
-    end
-    
-    if not antiHitActive then
-        antiHitActive = true
-        UI:Notify("Anti-Hit: ON (auto dodge enabled)")
-    end
-    
-    local char = LocalPlayer.Character
-    if not char then return end
-    
-    local hum = char:FindFirstChildOfClass("Humanoid")
-    local root = char:FindFirstChild("HumanoidRootPart")
-    if not hum or not root then return end
-    
-    -- Initialize last health
-    if not lastHealth then
-        lastHealth = hum.Health
-        return
-    end
-    
-    -- Reduce cooldown
-    if antiHitCooldown > 0 then
-        antiHitCooldown = antiHitCooldown - dt
-    end
-    
-    -- Detect damage (health dropped)
-    if hum.Health < lastHealth and antiHitCooldown <= 0 then
-        -- Dodge: teleport slightly to the side
-        local dodgeDirection = Vector3.new(
-            math.random(-5, 5),
-            2,
-            math.random(-5, 5)
-        )
-        pcall(function()
-            root.CFrame = root.CFrame + dodgeDirection
-            root.AssemblyLinearVelocity = Vector3.new(0, 0, 0)
-        end)
-        antiHitCooldown = 0.5 -- Cooldown to prevent spam
-    end
-    
-    lastHealth = hum.Health
-end)
-
--- Cleanup when Anti-Hit is disabled
-task.spawn(function()
-    while task.wait(1) do
-        if not Config.Misc.AntiHit and antiHitActive then
-            antiHitActive = false
-            UI:Notify("Anti-Hit: OFF")
-        end
-    end
-end)
-
 -- ===== PANIC KEY =====
 -- Instantly disables all aggressive/movement features.
 -- Ignores gameProcessed on purpose, so it works even with the Roblox menu/chat open.
@@ -2839,10 +2719,6 @@ UI:CreateToggle(MiscPage, "FOV Changer", "Misc", "FOVChanger")
 UI:CreateSlider(MiscPage, "FOV Value", 70, 120, "Misc", "FOVValue")
 UI:CreateKeybind(MiscPage, "NoClip Toggle Key", "Misc", "NoClipToggleKey")
 UI:CreateKeybind(MiscPage, "PANIC Key (stop all)", "Misc", "PanicKey")
-
--- God Mode & Anti-Hit (with auto-detection)
-UI:CreateToggle(MiscPage, "God Mode (auto-detects compatibility)", "Misc", "GodMode")
-UI:CreateToggle(MiscPage, "Anti-Hit (dodge bullets automatically)", "Misc", "AntiHit")
 
 -- Theme Color Picker (same style as ESP color)
 UI:CreateColorPicker(MiscPage, "Theme Color", "Visuals", "Accent")
