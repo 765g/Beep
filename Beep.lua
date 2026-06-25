@@ -2,7 +2,7 @@
 -- Universal ESP, Aimbot & Physics Controller
 
 -- VERSION CONTROL (Update this for each new version)
-local BEEP_VERSION = "v4.2.2"
+local BEEP_VERSION = "v5.0.0"
 
 local StartTime = tick()
 if not game:IsLoaded() then
@@ -165,10 +165,108 @@ UI.Screen = UI:Create("ScreenGui", {
     Parent = CoreGui
 })
 
+-- ===== PREMIUM LOADING SCREEN =====
+local LoadingScreen = UI:Create("Frame", {
+    Size = UDim2.new(1, 0, 1, 0),
+    Position = UDim2.new(0, 0, 0, 0),
+    BackgroundColor3 = Color3.fromRGB(8, 8, 12),
+    BorderSizePixel = 0,
+    ZIndex = 1000,
+    Parent = UI.Screen
+})
+
+local LoadingLogo = UI:Create("TextLabel", {
+    Size = UDim2.new(0, 200, 0, 60),
+    Position = UDim2.new(0.5, -100, 0.5, -80),
+    BackgroundTransparency = 1,
+    Text = "beep",
+    TextColor3 = Config.Visuals.Accent,
+    Font = Enum.Font.GothamBlack,
+    TextSize = 48,
+    ZIndex = 1001,
+    Parent = LoadingScreen
+})
+
+local LoadingText = UI:Create("TextLabel", {
+    Size = UDim2.new(0, 300, 0, 30),
+    Position = UDim2.new(0.5, -150, 0.5, -10),
+    BackgroundTransparency = 1,
+    Text = "Loading framework...",
+    TextColor3 = Color3.fromRGB(180, 180, 190),
+    Font = Enum.Font.GothamMedium,
+    TextSize = 14,
+    ZIndex = 1001,
+    Parent = LoadingScreen
+})
+
+local LoadingBar = UI:Create("Frame", {
+    Size = UDim2.new(0, 300, 0, 4),
+    Position = UDim2.new(0.5, -150, 0.5, 30),
+    BackgroundColor3 = Color3.fromRGB(30, 30, 36),
+    BorderSizePixel = 0,
+    ZIndex = 1001,
+    Parent = LoadingScreen
+})
+Instance.new("UICorner", LoadingBar).CornerRadius = UDim.new(1, 0)
+
+local LoadingFill = UI:Create("Frame", {
+    Size = UDim2.new(0, 0, 1, 0),
+    BackgroundColor3 = Config.Visuals.Accent,
+    BorderSizePixel = 0,
+    ZIndex = 1002,
+    Parent = LoadingBar
+})
+Instance.new("UICorner", LoadingFill).CornerRadius = UDim.new(1, 0)
+
+local LoadingVersion = UI:Create("TextLabel", {
+    Size = UDim2.new(0, 100, 0, 20),
+    Position = UDim2.new(0.5, -50, 0.5, 60),
+    BackgroundTransparency = 1,
+    Text = BEEP_VERSION,
+    TextColor3 = Config.Visuals.Accent,
+    Font = Enum.Font.GothamBold,
+    TextSize = 12,
+    ZIndex = 1001,
+    Parent = LoadingScreen
+})
+
+-- Animated loading
+task.spawn(function()
+    local loadingSteps = {
+        {text = "Initializing services...", progress = 0.2, wait = 0.3},
+        {text = "Loading modules...", progress = 0.4, wait = 0.3},
+        {text = "Setting up UI...", progress = 0.6, wait = 0.3},
+        {text = "Configuring features...", progress = 0.8, wait = 0.3},
+        {text = "Ready!", progress = 1, wait = 0.4},
+    }
+    
+    for _, step in ipairs(loadingSteps) do
+        LoadingText.Text = step.text
+        TweenService:Create(LoadingFill, TweenInfo.new(0.4, Enum.EasingStyle.Quad), {
+            Size = UDim2.new(step.progress, 0, 1, 0)
+        }):Play()
+        task.wait(step.wait)
+    end
+    
+    -- Fade out loading screen
+    task.wait(0.2)
+    TweenService:Create(LoadingScreen, TweenInfo.new(0.4, Enum.EasingStyle.Quad), {
+        BackgroundTransparency = 1
+    }):Play()
+    for _, obj in pairs(LoadingScreen:GetChildren()) do
+        if obj:IsA("GuiObject") then
+            TweenService:Create(obj, TweenInfo.new(0.4), {TextTransparency = 1, BackgroundTransparency = 1}):Play()
+        end
+    end
+    task.wait(0.5)
+    LoadingScreen:Destroy()
+end)
+
 local Main = UI:Create("Frame", {
     Size = UDim2.new(0, 660, 0, 480), 
     Position = UDim2.new(0.5, -330, 0.5, -240),
     BackgroundColor3 = Color3.fromRGB(10, 10, 14),
+    BackgroundTransparency = 0.08, -- Glassmorphism effect
     BorderSizePixel = 0, 
     ClipsDescendants = true,
     ZIndex = 1,
@@ -176,41 +274,90 @@ local Main = UI:Create("Frame", {
 })
 Instance.new("UICorner", Main).CornerRadius = UDim.new(0, 12)
 
--- Subtle gradient on main background
-UI:Create("UIGradient", {
+-- Glassmorphism blur effect (premium look)
+local MainBlur = Instance.new("ImageLabel", Main)
+MainBlur.Size = UDim2.new(1, 0, 1, 0)
+MainBlur.BackgroundTransparency = 1
+MainBlur.Image = "rbxassetid://8992230677" -- Glass texture
+MainBlur.ImageColor3 = Color3.fromRGB(10, 10, 14)
+MainBlur.ImageTransparency = 0.7
+MainBlur.ScaleType = Enum.ScaleType.Tile
+MainBlur.TileSize = UDim2.new(0, 128, 0, 128)
+MainBlur.ZIndex = 0
+
+-- Animated gradient overlay (premium effect)
+local AnimatedGradient = UI:Create("UIGradient", {
     Color = ColorSequence.new({
         ColorSequenceKeypoint.new(0, Color3.fromRGB(12, 12, 16)),
+        ColorSequenceKeypoint.new(0.5, Config.Visuals.Accent),
         ColorSequenceKeypoint.new(1, Color3.fromRGB(8, 8, 12))
     }),
-    Rotation = 90,
+    Rotation = 45,
+    Transparency = NumberSequence.new({
+        NumberSequenceKeypoint.new(0, 0.85),
+        NumberSequenceKeypoint.new(0.5, 0.7),
+        NumberSequenceKeypoint.new(1, 0.85)
+    }),
     Parent = Main
 })
+
+-- Animate the gradient
+task.spawn(function()
+    while task.wait(0.03) do
+        if Main.Parent then
+            AnimatedGradient.Rotation = (AnimatedGradient.Rotation + 0.5) % 360
+        end
+    end
+end)
 
 local MainStroke = UI:Create("UIStroke", {
-    Color = Color3.fromRGB(36, 36, 44),
+    Color = Config.Visuals.Accent,
     Thickness = 1.5, 
-    Transparency = 0.2,
+    Transparency = 0.4,
     Parent = Main
 })
 
--- ===== TOP BAR (Title + Window Controls) =====
+RegisterAccent(function(c) 
+    MainStroke.Color = c
+    AnimatedGradient.Color = ColorSequence.new({
+        ColorSequenceKeypoint.new(0, Color3.fromRGB(12, 12, 16)),
+        ColorSequenceKeypoint.new(0.5, c),
+        ColorSequenceKeypoint.new(1, Color3.fromRGB(8, 8, 12))
+    })
+end)
+
+-- ===== TOP BAR (Title + Window Controls + Premium Glow) =====
 local TopBar = UI:Create("Frame", {
     Size = UDim2.new(1, 0, 0, 46),
     BackgroundColor3 = Color3.fromRGB(14, 14, 18),
+    BackgroundTransparency = 0.1,
     BorderSizePixel = 0,
     ZIndex = 6,
     Parent = Main
 })
 Instance.new("UICorner", TopBar).CornerRadius = UDim.new(0, 12)
+
+-- Premium glow effect on topbar
+local TopBarGlow = UI:Create("Frame", {
+    Size = UDim2.new(1, 0, 0, 2), Position = UDim2.new(0, 0, 1, -2),
+    BackgroundColor3 = Config.Visuals.Accent, BorderSizePixel = 0, ZIndex = 7,
+    BackgroundTransparency = 0.3,
+    Parent = TopBar
+})
+UI:Create("UIGradient", {
+    Transparency = NumberSequence.new({
+        NumberSequenceKeypoint.new(0, 0.7),
+        NumberSequenceKeypoint.new(0.5, 0),
+        NumberSequenceKeypoint.new(1, 0.7)
+    }),
+    Parent = TopBarGlow
+})
+RegisterAccent(function(c) TopBarGlow.BackgroundColor3 = c end)
+
 -- cover bottom rounded corners of topbar
 UI:Create("Frame", {
     Size = UDim2.new(1, 0, 0, 14), Position = UDim2.new(0, 0, 1, -14),
-    BackgroundColor3 = Color3.fromRGB(14, 14, 18), BorderSizePixel = 0, ZIndex = 6, Parent = TopBar
-})
--- bottom border line of topbar
-UI:Create("Frame", {
-    Size = UDim2.new(1, 0, 0, 1), Position = UDim2.new(0, 0, 1, -1),
-    BackgroundColor3 = Color3.fromRGB(30, 30, 38), BorderSizePixel = 0, ZIndex = 7, Parent = TopBar
+    BackgroundColor3 = Color3.fromRGB(14, 14, 18), BackgroundTransparency = 0.1, BorderSizePixel = 0, ZIndex = 6, Parent = TopBar
 })
 
 -- Accent dot / logo mark
@@ -429,6 +576,101 @@ task.spawn(function()
     end
 end)
 
+-- ===== ARRAYLIST (Active Features List - Premium Style) =====
+local ArraylistFrame = UI:Create("Frame", {
+    Size = UDim2.new(0, 220, 0, 0),
+    Position = UDim2.new(1, -230, 0, 10),
+    BackgroundTransparency = 1,
+    AutomaticSize = Enum.AutomaticSize.Y,
+    ZIndex = 100,
+    Parent = UI.Screen
+})
+
+local ArraylistLayout = UI:Create("UIListLayout", {
+    Padding = UDim.new(0, 4),
+    SortOrder = Enum.SortOrder.LayoutOrder,
+    HorizontalAlignment = Enum.HorizontalAlignment.Right,
+    Parent = ArraylistFrame
+})
+
+local ArraylistItems = {}
+
+local function UpdateArraylist()
+    -- Clear old items
+    for _, item in pairs(ArraylistItems) do
+        if item and item.Parent then item:Destroy() end
+    end
+    ArraylistItems = {}
+    
+    local activeFeatures = {}
+    
+    -- Combat features
+    if Config.Combat.SilentAim then table.insert(activeFeatures, {name = "Aim Assist", color = Config.Visuals.Accent, key = Config.Combat.LockKey}) end
+    if Config.Combat.Ragebot then table.insert(activeFeatures, {name = "Ragebot", color = Color3.fromRGB(255, 80, 80), key = ""}) end
+    if Config.Combat.Triggerbot then table.insert(activeFeatures, {name = "Triggerbot", color = Color3.fromRGB(255, 200, 80), key = ""}) end
+    if Config.Combat.KillAura then table.insert(activeFeatures, {name = "Kill Aura", color = Color3.fromRGB(255, 100, 100), key = ""}) end
+    if Config.Combat.UltraRapidFire then table.insert(activeFeatures, {name = "Ultra Rapid Fire", color = Color3.fromRGB(255, 150, 50), key = ""}) end
+    if Config.Combat.NoRecoil then table.insert(activeFeatures, {name = "No Recoil", color = Color3.fromRGB(100, 200, 255), key = ""}) end
+    if Config.Combat.NoSpread then table.insert(activeFeatures, {name = "No Spread", color = Color3.fromRGB(100, 200, 255), key = ""}) end
+    
+    -- Physics features
+    if Config.Physics.SpeedActive then table.insert(activeFeatures, {name = "Speed Hack", color = Color3.fromRGB(80, 255, 200), key = Config.Physics.SpeedKey}) end
+    if Config.Physics.FlyActive then table.insert(activeFeatures, {name = "Fly", color = Color3.fromRGB(120, 180, 255), key = Config.Physics.FlyKey}) end
+    if Config.Physics.NoClipActive then table.insert(activeFeatures, {name = "NoClip", color = Color3.fromRGB(200, 150, 255), key = Config.Misc.NoClipToggleKey}) end
+    if Config.Physics.ClickTP then table.insert(activeFeatures, {name = "Click TP", color = Color3.fromRGB(150, 100, 255), key = Config.Physics.ClickTPKey}) end
+    
+    -- Visuals features
+    if Config.Visuals.Enabled then table.insert(activeFeatures, {name = "ESP", color = Color3.fromRGB(80, 255, 120), key = ""}) end
+    if Config.Misc.Fullbright then table.insert(activeFeatures, {name = "Fullbright", color = Color3.fromRGB(255, 255, 150), key = ""}) end
+    
+    -- Create arraylist items
+    for i, feature in ipairs(activeFeatures) do
+        local item = UI:Create("Frame", {
+            Size = UDim2.new(0, 0, 0, 24),
+            BackgroundColor3 = Color3.fromRGB(16, 16, 20),
+            BackgroundTransparency = 0.15,
+            AutomaticSize = Enum.AutomaticSize.X,
+            LayoutOrder = i,
+            ZIndex = 101,
+            Parent = ArraylistFrame
+        })
+        Instance.new("UICorner", item).CornerRadius = UDim.new(0, 6)
+        UI:Create("UIPadding", {PaddingLeft = UDim.new(0, 10), PaddingRight = UDim.new(0, 10), Parent = item})
+        
+        -- Accent side indicator
+        local indicator = UI:Create("Frame", {
+            Size = UDim2.new(0, 2, 1, -8), Position = UDim2.new(0, 3, 0, 4),
+            BackgroundColor3 = feature.color, BorderSizePixel = 0, ZIndex = 102, Parent = item
+        })
+        Instance.new("UICorner", indicator).CornerRadius = UDim.new(1, 0)
+        
+        -- Feature label
+        local label = UI:Create("TextLabel", {
+            Size = UDim2.new(0, 0, 1, 0), Position = UDim2.new(0, 10, 0, 0),
+            BackgroundTransparency = 1,
+            Text = feature.name .. (feature.key ~= "" and " [" .. feature.key .. "]" or ""),
+            TextColor3 = Color3.new(1, 1, 1),
+            Font = Enum.Font.GothamBold,
+            TextSize = 11,
+            TextXAlignment = Enum.TextXAlignment.Left,
+            AutomaticSize = Enum.AutomaticSize.X,
+            ZIndex = 102,
+            Parent = item
+        })
+        
+        table.insert(ArraylistItems, item)
+    end
+end
+
+-- Update arraylist every 0.5 seconds
+task.spawn(function()
+    while task.wait(0.5) do
+        if UI.Active then
+            UpdateArraylist()
+        end
+    end
+end)
+
 -- Search Bar (Below the menu, doesn't cover content)
 local SearchBar = UI:Create("Frame", {
     Size = UDim2.new(1, -200, 0, 38),
@@ -525,45 +767,77 @@ SearchBox:GetPropertyChangedSignal("Text"):Connect(function()
     end
 end)
 
--- Notification System
+-- Notification System (Premium Style)
 function UI:Notify(text)
     if not UI.Active then return end
     task.spawn(function()
         local n = UI:Create("Frame", {
-            Size = UDim2.new(0, 290, 0, 48), 
-            Position = UDim2.new(1, 10, 0.8, 0),
-            BackgroundColor3 = Color3.fromRGB(22, 23, 28), 
+            Size = UDim2.new(0, 300, 0, 52), 
+            Position = UDim2.new(1, 10, 0.85, 0),
+            BackgroundColor3 = Color3.fromRGB(18, 18, 24), 
+            BackgroundTransparency = 0.1,
             ZIndex = 20,
             Parent = UI.Screen
         })
         Instance.new("UICorner", n).CornerRadius = UDim.new(0, 10)
-        UI:Create("UIStroke", {Color = Config.Visuals.Accent, Thickness = 1.5, Transparency = 0.3, Parent = n})
+        
+        -- Premium glow border
+        local notifStroke = UI:Create("UIStroke", {Color = Config.Visuals.Accent, Thickness = 1.5, Transparency = 0.4, Parent = n})
+        
+        -- Glassmorphism blur effect
+        local notifBlur = Instance.new("ImageLabel", n)
+        notifBlur.Size = UDim2.new(1, 0, 1, 0)
+        notifBlur.BackgroundTransparency = 1
+        notifBlur.Image = "rbxassetid://8992230677"
+        notifBlur.ImageColor3 = Color3.fromRGB(18, 18, 24)
+        notifBlur.ImageTransparency = 0.85
+        notifBlur.ScaleType = Enum.ScaleType.Tile
+        notifBlur.TileSize = UDim2.new(0, 64, 0, 64)
+        notifBlur.ZIndex = 19
 
-        -- accent side bar
+        -- accent side bar with gradient
         local bar = UI:Create("Frame", {
-            Size = UDim2.new(0, 4, 1, -16), Position = UDim2.new(0, 8, 0, 8),
+            Size = UDim2.new(0, 4, 1, -20), Position = UDim2.new(0, 10, 0, 10),
             BackgroundColor3 = Config.Visuals.Accent, ZIndex = 21, Parent = n
         })
-        Instance.new("UICorner", bar).CornerRadius = UDim.new(1, 0)
+        Instance.new("UICorner", bar).CornerRadius = UDim.new(0, 2)
+        UI:Create("UIGradient", {
+            Transparency = NumberSequence.new({
+                NumberSequenceKeypoint.new(0, 0.3),
+                NumberSequenceKeypoint.new(0.5, 0),
+                NumberSequenceKeypoint.new(1, 0.3)
+            }),
+            Rotation = 90,
+            Parent = bar
+        })
         
         UI:Create("TextLabel", {
-            Size = UDim2.new(1, -30, 1, 0), 
-            Position = UDim2.new(0, 20, 0, 0),
+            Size = UDim2.new(1, -36, 1, 0), 
+            Position = UDim2.new(0, 24, 0, 0),
             BackgroundTransparency = 1, 
             Text = text,
             TextColor3 = Color3.new(1,1,1), 
             Font = Enum.Font.GothamMedium, 
-            TextSize = 12,
+            TextSize = 13,
             TextXAlignment = Enum.TextXAlignment.Left,
             TextWrapped = true,
             ZIndex = 21,
             Parent = n
         })
         
-        n:TweenPosition(UDim2.new(0.98, -290, 0.8, 0), "Out", "Back", 0.4)
+        -- Slide in with bounce
+        n:TweenPosition(UDim2.new(0.98, -300, 0.85, 0), "Out", "Back", 0.5)
         task.wait(3)
         if n and n.Parent then
-            n:TweenPosition(UDim2.new(1, 10, 0.8, 0), "In", "Quad", 0.4)
+            -- Fade out
+            TweenService:Create(n, TweenInfo.new(0.4), {BackgroundTransparency = 1}):Play()
+            TweenService:Create(notifStroke, TweenInfo.new(0.4), {Transparency = 1}):Play()
+            TweenService:Create(bar, TweenInfo.new(0.4), {BackgroundTransparency = 1}):Play()
+            for _, child in pairs(n:GetChildren()) do
+                if child:IsA("TextLabel") then
+                    TweenService:Create(child, TweenInfo.new(0.4), {TextTransparency = 1}):Play()
+                end
+            end
             task.wait(0.5) 
             n:Destroy()
         end
@@ -630,7 +904,14 @@ UserInputService.InputBegan:Connect(function(input, gameProcessed)
     end
 end)
 
--- Tab System
+-- Tab System with Icons and Tooltips (Premium Style)
+local TabIcons = {
+    ["Combat"] = "🎯",
+    ["Visuals"] = "👁",
+    ["Physics"] = "⚡",
+    ["Misc"] = "⚙"
+}
+
 function UI:CreateTab(name)
     local tabIndex = #UI.Tabs
     local Page = UI:Create("ScrollingFrame", {
@@ -645,7 +926,7 @@ function UI:CreateTab(name)
     })
     RegisterAccent(function(c) Page.ScrollBarImageColor3 = c end)
     local Layout = UI:Create("UIListLayout", {
-        Padding = UDim.new(0, 8),
+        Padding = UDim.new(0, 10), -- Increased spacing for breathing room
         SortOrder = Enum.SortOrder.LayoutOrder,
         Parent = Page
     })
@@ -655,8 +936,8 @@ function UI:CreateTab(name)
     end)
     
     local TabButton = UI:Create("TextButton", {
-        Size = UDim2.new(0, 148, 0, 38),
-        Position = UDim2.new(0, 10, 0, 16 + (tabIndex * 46)),
+        Size = UDim2.new(0, 148, 0, 42), -- Slightly taller for icon
+        Position = UDim2.new(0, 10, 0, 16 + (tabIndex * 50)),
         BackgroundColor3 = Color3.fromRGB(20, 20, 26),
         BackgroundTransparency = tabIndex == 0 and 0 or 1,
         Text = "",
@@ -666,10 +947,21 @@ function UI:CreateTab(name)
     })
     Instance.new("UICorner", TabButton).CornerRadius = UDim.new(0, 10)
 
+    -- Premium glow effect on hover
+    local GlowFrame = UI:Create("Frame", {
+        Size = UDim2.new(1, 0, 1, 0),
+        BackgroundColor3 = Config.Visuals.Accent,
+        BackgroundTransparency = 1,
+        ZIndex = 2,
+        Parent = TabButton
+    })
+    Instance.new("UICorner", GlowFrame).CornerRadius = UDim.new(0, 10)
+    RegisterAccent(function(c) GlowFrame.BackgroundColor3 = c end)
+
     -- Accent selection indicator (left bar)
     local Indicator = UI:Create("Frame", {
-        Size = UDim2.new(0, 3, 0, tabIndex == 0 and 22 or 0),
-        Position = UDim2.new(0, 0, 0.5, tabIndex == 0 and -11 or 0),
+        Size = UDim2.new(0, 3, 0, tabIndex == 0 and 26 or 0),
+        Position = UDim2.new(0, 0, 0.5, tabIndex == 0 and -13 or 0),
         BackgroundColor3 = Config.Visuals.Accent,
         BorderSizePixel = 0,
         ZIndex = 4,
@@ -678,9 +970,23 @@ function UI:CreateTab(name)
     Instance.new("UICorner", Indicator).CornerRadius = UDim.new(1, 0)
     RegisterAccent(function(c) Indicator.BackgroundColor3 = c end)
 
+    -- Tab Icon
+    local icon = TabIcons[name] or "●"
+    local TabIcon = UI:Create("TextLabel", {
+        Size = UDim2.new(0, 24, 0, 24),
+        Position = UDim2.new(0, 12, 0.5, -12),
+        BackgroundTransparency = 1,
+        Text = icon,
+        TextColor3 = tabIndex == 0 and Config.Visuals.Accent or Color3.fromRGB(150, 140, 160),
+        Font = Enum.Font.GothamBold,
+        TextSize = 16,
+        ZIndex = 5,
+        Parent = TabButton
+    })
+
     local TabLabel = UI:Create("TextLabel", {
-        Size = UDim2.new(1, -20, 1, 0),
-        Position = UDim2.new(0, 16, 0, 0),
+        Size = UDim2.new(1, -48, 1, 0),
+        Position = UDim2.new(0, 42, 0, 0),
         BackgroundTransparency = 1,
         Text = name,
         TextColor3 = tabIndex == 0 and Color3.new(1,1,1) or Color3.fromRGB(150, 140, 160),
@@ -694,13 +1000,17 @@ function UI:CreateTab(name)
     TabButton.MouseEnter:Connect(function()
         if not Page.Visible then
             TweenService:Create(TabButton, TweenInfo.new(0.15), {BackgroundTransparency = 0.5}):Play()
+            TweenService:Create(GlowFrame, TweenInfo.new(0.2), {BackgroundTransparency = 0.85}):Play() -- Subtle glow
             TweenService:Create(TabLabel, TweenInfo.new(0.15), {TextColor3 = Color3.fromRGB(210, 200, 220)}):Play()
+            TweenService:Create(TabIcon, TweenInfo.new(0.15), {TextColor3 = Color3.fromRGB(210, 200, 220)}):Play()
         end
     end)
     TabButton.MouseLeave:Connect(function()
         if not Page.Visible then
             TweenService:Create(TabButton, TweenInfo.new(0.15), {BackgroundTransparency = 1}):Play()
+            TweenService:Create(GlowFrame, TweenInfo.new(0.2), {BackgroundTransparency = 1}):Play()
             TweenService:Create(TabLabel, TweenInfo.new(0.15), {TextColor3 = Color3.fromRGB(150, 140, 160)}):Play()
+            TweenService:Create(TabIcon, TweenInfo.new(0.15), {TextColor3 = Color3.fromRGB(150, 140, 160)}):Play()
         end
     end)
     
@@ -709,21 +1019,34 @@ function UI:CreateTab(name)
         for _, v in pairs(Sidebar:GetChildren()) do 
             if v:IsA("TextButton") then 
                 local lbl = v:FindFirstChildOfClass("TextLabel")
+                local icn = v:FindFirstChild("TextLabel") and v:GetChildren()[3]
                 local ind = v:FindFirstChildOfClass("Frame")
+                local glw = v:FindFirstChild("Frame")
                 if lbl then TweenService:Create(lbl, TweenInfo.new(0.15), {TextColor3 = Color3.fromRGB(150, 140, 160)}):Play() end
+                if icn and icn:IsA("TextLabel") and icn ~= lbl then TweenService:Create(icn, TweenInfo.new(0.15), {TextColor3 = Color3.fromRGB(150, 140, 160)}):Play() end
                 TweenService:Create(v, TweenInfo.new(0.15), {BackgroundTransparency = 1}):Play()
+                if glw and glw ~= ind then TweenService:Create(glw, TweenInfo.new(0.2), {BackgroundTransparency = 1}):Play() end
                 if ind then TweenService:Create(ind, TweenInfo.new(0.15), {Size = UDim2.new(0, 3, 0, 0), Position = UDim2.new(0, 0, 0.5, 0)}):Play() end
             end 
         end
         Page.Visible = true
         TweenService:Create(TabButton, TweenInfo.new(0.15), {BackgroundTransparency = 0}):Play()
+        TweenService:Create(GlowFrame, TweenInfo.new(0.2), {BackgroundTransparency = 0.9}):Play()
         TweenService:Create(TabLabel, TweenInfo.new(0.15), {TextColor3 = Color3.new(1,1,1)}):Play()
-        TweenService:Create(Indicator, TweenInfo.new(0.15), {Size = UDim2.new(0, 3, 0, 22), Position = UDim2.new(0, 0, 0.5, -11)}):Play()
+        TweenService:Create(TabIcon, TweenInfo.new(0.15), {TextColor3 = Config.Visuals.Accent}):Play()
+        TweenService:Create(Indicator, TweenInfo.new(0.15), {Size = UDim2.new(0, 3, 0, 26), Position = UDim2.new(0, 0, 0.5, -13)}):Play()
     end)
     
     if tabIndex == 0 then
         Page.Visible = true
+        TabIcon.TextColor3 = Config.Visuals.Accent
     end
+    
+    RegisterAccent(function(c)
+        if Page.Visible then
+            TabIcon.TextColor3 = c
+        end
+    end)
     
     table.insert(UI.Tabs, Page)
     return Page
@@ -734,26 +1057,36 @@ local ToggleIndicators = {}
 
 -- Helper to animate a switch visual
 local function SetSwitchVisual(track, knob, state)
-    TweenService:Create(track, TweenInfo.new(0.18, Enum.EasingStyle.Quad), {
+    TweenService:Create(track, TweenInfo.new(0.2, Enum.EasingStyle.Quad), {
         BackgroundColor3 = state and Config.Visuals.Accent or Color3.fromRGB(38, 38, 46)
     }):Play()
-    TweenService:Create(knob, TweenInfo.new(0.18, Enum.EasingStyle.Quad), {
-        Position = state and UDim2.new(1, -20, 0.5, -8) or UDim2.new(0, 4, 0.5, -8)
+    TweenService:Create(knob, TweenInfo.new(0.2, Enum.EasingStyle.Quart, Enum.EasingDirection.Out), {
+        Position = state and UDim2.new(1, -22, 0.5, -9) or UDim2.new(0, 4, 0.5, -9)
     }):Play()
 end
 
 function UI:CreateToggle(parent, text, configSection, configKey, callback)
-    local Frame = UI:Create("Frame", {Size = UDim2.new(1, -10, 0, 42), BackgroundColor3 = Color3.fromRGB(18, 18, 24), ZIndex = 4, Parent = parent})
-    Instance.new("UICorner", Frame).CornerRadius = UDim.new(0, 8)
-    UI:Create("UIStroke", {Color = Color3.fromRGB(32, 32, 40), Thickness = 1, Transparency = 0.4, Parent = Frame})
+    local Frame = UI:Create("Frame", {Size = UDim2.new(1, -10, 0, 46), BackgroundColor3 = Color3.fromRGB(18, 18, 24), BackgroundTransparency = 0.1, ZIndex = 4, Parent = parent})
+    Instance.new("UICorner", Frame).CornerRadius = UDim.new(0, 9)
+    local frameStroke = UI:Create("UIStroke", {Color = Color3.fromRGB(32, 32, 40), Thickness = 1, Transparency = 0.6, Parent = Frame})
     
-    UI:Create("TextLabel", {Size = UDim2.new(0.7, 0, 1, 0), Position = UDim2.new(0, 14, 0, 0), BackgroundTransparency = 1, Text = text, TextColor3 = Color3.fromRGB(225, 226, 232), Font = Enum.Font.Gotham, TextSize = 13, TextXAlignment = Enum.TextXAlignment.Left, ZIndex = 5, Parent = Frame})
+    -- Hover glow effect
+    Frame.MouseEnter:Connect(function()
+        TweenService:Create(frameStroke, TweenInfo.new(0.2), {Transparency = 0.3, Color = Config.Visuals.Accent}):Play()
+        TweenService:Create(Frame, TweenInfo.new(0.2), {BackgroundTransparency = 0}):Play()
+    end)
+    Frame.MouseLeave:Connect(function()
+        TweenService:Create(frameStroke, TweenInfo.new(0.2), {Transparency = 0.6, Color = Color3.fromRGB(32, 32, 40)}):Play()
+        TweenService:Create(Frame, TweenInfo.new(0.2), {BackgroundTransparency = 0.1}):Play()
+    end)
+    
+    local TextLabel = UI:Create("TextLabel", {Size = UDim2.new(0.65, 0, 1, 0), Position = UDim2.new(0, 16, 0, 0), BackgroundTransparency = 1, Text = text, TextColor3 = Color3.fromRGB(230, 232, 237), Font = Enum.Font.GothamMedium, TextSize = 13, TextXAlignment = Enum.TextXAlignment.Left, ZIndex = 5, Parent = Frame})
     
     local state = Config[configSection][configKey]
 
     -- Switch track
     local Track = UI:Create("TextButton", {
-        Size = UDim2.new(0, 44, 0, 22), Position = UDim2.new(1, -56, 0.5, -11),
+        Size = UDim2.new(0, 46, 0, 24), Position = UDim2.new(1, -58, 0.5, -12),
         BackgroundColor3 = state and Config.Visuals.Accent or Color3.fromRGB(38, 38, 46),
         Text = "", AutoButtonColor = false, ZIndex = 5, Parent = Frame
     })
@@ -761,8 +1094,8 @@ function UI:CreateToggle(parent, text, configSection, configKey, callback)
 
     -- Knob
     local Knob = UI:Create("Frame", {
-        Size = UDim2.new(0, 16, 0, 16),
-        Position = state and UDim2.new(1, -20, 0.5, -8) or UDim2.new(0, 4, 0.5, -8),
+        Size = UDim2.new(0, 18, 0, 18),
+        Position = state and UDim2.new(1, -22, 0.5, -9) or UDim2.new(0, 4, 0.5, -9),
         BackgroundColor3 = isLightColorGlobal(Config.Visuals.Accent) and Color3.fromRGB(80, 80, 90) or Color3.new(1, 1, 1),
         ZIndex = 6, Parent = Track
     })
@@ -795,14 +1128,24 @@ function UI:UpdateToggle(configSection, configKey, state)
 end
 
 function UI:CreateSlider(parent, text, min, max, configSection, configKey, callback)
-    local Frame = UI:Create("Frame", {Size = UDim2.new(1, -10, 0, 54), BackgroundColor3 = Color3.fromRGB(18, 18, 24), ZIndex = 4, Parent = parent})
-    Instance.new("UICorner", Frame).CornerRadius = UDim.new(0, 8)
-    UI:Create("UIStroke", {Color = Color3.fromRGB(32, 32, 40), Thickness = 1, Transparency = 0.4, Parent = Frame})
+    local Frame = UI:Create("Frame", {Size = UDim2.new(1, -10, 0, 60), BackgroundColor3 = Color3.fromRGB(18, 18, 24), BackgroundTransparency = 0.1, ZIndex = 4, Parent = parent})
+    Instance.new("UICorner", Frame).CornerRadius = UDim.new(0, 9)
+    local frameStroke = UI:Create("UIStroke", {Color = Color3.fromRGB(32, 32, 40), Thickness = 1, Transparency = 0.6, Parent = Frame})
     
-    local Label = UI:Create("TextLabel", {Size = UDim2.new(0.7, 0, 0, 25), Position = UDim2.new(0, 14, 0, 4), BackgroundTransparency = 1, Text = text, TextColor3 = Color3.fromRGB(225, 226, 232), Font = Enum.Font.Gotham, TextSize = 13, TextXAlignment = Enum.TextXAlignment.Left, ZIndex = 5, Parent = Frame})
-    local ValueLabel = UI:Create("TextLabel", {Size = UDim2.new(0, 60, 0, 25), Position = UDim2.new(1, -70, 0, 4), BackgroundTransparency = 1, Text = tostring(Config[configSection][configKey]), TextColor3 = Config.Visuals.Accent, Font = Enum.Font.GothamBold, TextSize = 13, TextXAlignment = Enum.TextXAlignment.Right, ZIndex = 5, Parent = Frame})
+    -- Hover glow effect
+    Frame.MouseEnter:Connect(function()
+        TweenService:Create(frameStroke, TweenInfo.new(0.2), {Transparency = 0.3, Color = Config.Visuals.Accent}):Play()
+        TweenService:Create(Frame, TweenInfo.new(0.2), {BackgroundTransparency = 0}):Play()
+    end)
+    Frame.MouseLeave:Connect(function()
+        TweenService:Create(frameStroke, TweenInfo.new(0.2), {Transparency = 0.6, Color = Color3.fromRGB(32, 32, 40)}):Play()
+        TweenService:Create(Frame, TweenInfo.new(0.2), {BackgroundTransparency = 0.1}):Play()
+    end)
     
-    local SlideBar = UI:Create("Frame", {Size = UDim2.new(1, -28, 0, 6), Position = UDim2.new(0, 14, 0, 38), BackgroundColor3 = Color3.fromRGB(34, 34, 42), ZIndex = 5, Parent = Frame})
+    local Label = UI:Create("TextLabel", {Size = UDim2.new(0.65, 0, 0, 28), Position = UDim2.new(0, 16, 0, 6), BackgroundTransparency = 1, Text = text, TextColor3 = Color3.fromRGB(230, 232, 237), Font = Enum.Font.GothamMedium, TextSize = 13, TextXAlignment = Enum.TextXAlignment.Left, ZIndex = 5, Parent = Frame})
+    local ValueLabel = UI:Create("TextLabel", {Size = UDim2.new(0, 64, 0, 28), Position = UDim2.new(1, -76, 0, 6), BackgroundTransparency = 1, Text = tostring(Config[configSection][configKey]), TextColor3 = Config.Visuals.Accent, Font = Enum.Font.GothamBold, TextSize = 13, TextXAlignment = Enum.TextXAlignment.Right, ZIndex = 5, Parent = Frame})
+    
+    local SlideBar = UI:Create("Frame", {Size = UDim2.new(1, -32, 0, 6), Position = UDim2.new(0, 16, 0, 42), BackgroundColor3 = Color3.fromRGB(34, 34, 42), ZIndex = 5, Parent = Frame})
     Instance.new("UICorner", SlideBar).CornerRadius = UDim.new(0, 3)
     
     local Fill = UI:Create("Frame", {Size = UDim2.new((Config[configSection][configKey] - min)/(max - min), 0, 1, 0), BackgroundColor3 = Config.Visuals.Accent, ZIndex = 6, Parent = SlideBar})
@@ -810,7 +1153,7 @@ function UI:CreateSlider(parent, text, min, max, configSection, configKey, callb
 
     -- Knob
     local Knob = UI:Create("Frame", {
-        Size = UDim2.new(0, 14, 0, 14), AnchorPoint = Vector2.new(0.5, 0.5),
+        Size = UDim2.new(0, 16, 0, 16), AnchorPoint = Vector2.new(0.5, 0.5),
         Position = UDim2.new(1, 0, 0.5, 0),
         BackgroundColor3 = isLightColorGlobal(Config.Visuals.Accent) and Color3.fromRGB(80, 80, 90) or Color3.new(1, 1, 1), ZIndex = 7, Parent = Fill
     })
@@ -829,19 +1172,27 @@ function UI:CreateSlider(parent, text, min, max, configSection, configKey, callb
         local val = math.floor(min + (pos * (max - min)))
         Config[configSection][configKey] = val
         ValueLabel.Text = tostring(val)
-        Fill.Size = UDim2.new(pos, 0, 1, 0)
+        TweenService:Create(Fill, TweenInfo.new(0.08, Enum.EasingStyle.Quad), {Size = UDim2.new(pos, 0, 1, 0)}):Play()
         if callback then callback(val) end
     end
     
     local draggingSlider = false
     Trigger.InputBegan:Connect(function(input)
-        if input.UserInputType == Enum.UserInputType.MouseButton1 then draggingSlider = true update(input) end
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then 
+            draggingSlider = true 
+            update(input)
+            -- Knob pulse effect
+            TweenService:Create(Knob, TweenInfo.new(0.15), {Size = UDim2.new(0, 20, 0, 20)}):Play()
+        end
     end)
     UserInputService.InputChanged:Connect(function(input)
         if draggingSlider and input.UserInputType == Enum.UserInputType.MouseMovement then update(input) end
     end)
     UserInputService.InputEnded:Connect(function(input)
-        if input.UserInputType == Enum.UserInputType.MouseButton1 then draggingSlider = false end
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then 
+            draggingSlider = false
+            TweenService:Create(Knob, TweenInfo.new(0.15), {Size = UDim2.new(0, 16, 0, 16)}):Play()
+        end
     end)
 end
 
