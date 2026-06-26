@@ -3,7 +3,7 @@
 -- Stable Version
 
 -- VERSION CONTROL (Update this for each new version)
-local BEEP_VERSION = "v5.0.0"
+local BEEP_VERSION = "v5.1.0"
 
 local StartTime = tick()
 if not game:IsLoaded() then
@@ -1795,26 +1795,45 @@ end)
 local function ragebotSettings()
     local prof = Config.Combat.RagebotGameProfile
     if prof == "Manual" then
-        return {
+        local result = {
             part = Config.Combat.RagebotTargetPart,
             visible = Config.Combat.RagebotVisibleCheck,
             prediction = Config.Combat.RagebotPrediction,
             fireMethod = "auto",
             faceTarget = Config.Combat.RagebotFaceTarget,
         }
+        -- DEBUG: Uncomment to verify settings
+        -- print("[RAGEBOT SETTINGS] Manual mode - part:", result.part)
+        return result
     end
     if prof == "Auto" then prof = detectedProfile end
     local profile = GameProfiles[prof] or GameProfiles["Universal"]
     -- Always use user's selected target part
     profile.part = Config.Combat.RagebotTargetPart
+    -- DEBUG: Uncomment to verify settings
+    -- print("[RAGEBOT SETTINGS] Profile:", prof, "- part:", profile.part)
     return profile
 end
 
 local function getRagebotPart(char, partName)
-    -- Try to find the specified part ONLY
-    local part = char:FindFirstChild(partName or Config.Combat.RagebotTargetPart)
+    local targetPart = partName or Config.Combat.RagebotTargetPart
     
-    -- Only use fallback if the configured part doesn't exist
+    -- DEBUG: Print what part we're looking for
+    -- print("[RAGEBOT DEBUG] Looking for part:", targetPart, "| Config value:", Config.Combat.RagebotTargetPart)
+    
+    -- Try exact match first
+    local part = char:FindFirstChild(targetPart)
+    
+    -- If not found, try alternate names (R15 vs R6 compatibility)
+    if not part then
+        if targetPart == "Torso" then
+            part = char:FindFirstChild("UpperTorso") -- R15 equivalent
+        elseif targetPart == "UpperTorso" then
+            part = char:FindFirstChild("Torso") -- R6 equivalent
+        end
+    end
+    
+    -- Only use fallback if the configured part AND alternates don't exist
     if not part then
         part = char:FindFirstChild("Head")
             or char:FindFirstChild("HumanoidRootPart")
@@ -1902,6 +1921,9 @@ RunService.RenderStepped:Connect(function(dt)
     if not target then
         return
     end
+
+    -- DEBUG: Uncomment to see what part is being targeted
+    -- print("[RAGEBOT] Targeting:", target.Name, "| Config says:", Config.Combat.RagebotTargetPart)
 
     local settings = ragebotSettings()
     local aimPos = target.Position
@@ -2762,50 +2784,64 @@ local function EnableFly()
     local rootPart = char:FindFirstChild("HumanoidRootPart")
     if not rootPart then return end
     
-    if FlyBodyVelocity then FlyBodyVelocity:Destroy() end
-    if FlyBodyGyro then FlyBodyGyro:Destroy() end
+    -- Clean up old BodyVelocity/BodyGyro if they exist (legacy cleanup)
+    if FlyBodyVelocity then FlyBodyVelocity:Destroy() FlyBodyVelocity = nil end
+    if FlyBodyGyro then FlyBodyGyro:Destroy() FlyBodyGyro = nil end
     
-    FlyBodyVelocity = Instance.new("BodyVelocity")
-    FlyBodyVelocity.Velocity = Vector3.new(0, 0, 0)
-    FlyBodyVelocity.MaxForce = Vector3.new(9e9, 9e9, 9e9)
-    FlyBodyVelocity.Parent = rootPart
-    
-    FlyBodyGyro = Instance.new("BodyGyro")
-    FlyBodyGyro.MaxTorque = Vector3.new(9e9, 9e9, 9e9)
-    FlyBodyGyro.P = 9e4
-    FlyBodyGyro.Parent = rootPart
-    
+    -- Modern flight system - direct velocity manipulation
     if FlyConnection then FlyConnection:Disconnect() end
     FlyConnection = RunService.RenderStepped:Connect(function()
         if not Config.Physics.Fly or not Config.Physics.FlyActive or not UI.Active then
-            if FlyBodyVelocity then FlyBodyVelocity:Destroy() FlyBodyVelocity = nil end
-            if FlyBodyGyro then FlyBodyGyro:Destroy() FlyBodyGyro = nil end
+            -- Reset velocity when disabled
+            if rootPart and rootPart.Parent then
+                rootPart.AssemblyLinearVelocity = Vector3.new(0, 0, 0)
+            end
             if FlyConnection then FlyConnection:Disconnect() FlyConnection = nil end
             return
         end
         
+        -- Get camera vectors for direction calculation
         local cam = Camera.CFrame
+        local lookVector = cam.LookVector
+        local rightVector = cam.RightVector
+        
+        -- Calculate movement direction from WASD input
         local direction = Vector3.new(0, 0, 0)
         
-        if UserInputService:IsKeyDown(Enum.KeyCode.W) then direction = direction + (cam.LookVector) end
-        if UserInputService:IsKeyDown(Enum.KeyCode.S) then direction = direction - (cam.LookVector) end
-        if UserInputService:IsKeyDown(Enum.KeyCode.A) then direction = direction - (cam.RightVector) end
-        if UserInputService:IsKeyDown(Enum.KeyCode.D) then direction = direction + (cam.RightVector) end
+        if UserInputService:IsKeyDown(Enum.KeyCode.W) then direction = direction + lookVector end
+        if UserInputService:IsKeyDown(Enum.KeyCode.S) then direction = direction - lookVector end
+        if UserInputService:IsKeyDown(Enum.KeyCode.A) then direction = direction - rightVector end
+        if UserInputService:IsKeyDown(Enum.KeyCode.D) then direction = direction + rightVector end
         if UserInputService:IsKeyDown(Enum.KeyCode.Space) then direction = direction + Vector3.new(0, 1, 0) end
         if UserInputService:IsKeyDown(Enum.KeyCode.LeftShift) then direction = direction - Vector3.new(0, 1, 0) end
         
+        -- Normalize direction and apply speed
         if direction.Magnitude > 0 then
             direction = direction.Unit
         end
         
-        FlyBodyVelocity.Velocity = direction * Config.Physics.FlySpeed
-        FlyBodyGyro.CFrame = cam
+        -- Write velocity directly to AssemblyLinearVelocity (modern method)
+        if rootPart and rootPart.Parent then
+            rootPart.AssemblyLinearVelocity = direction * Config.Physics.FlySpeed
+        end
     end)
 end
 
 local function DisableFly()
+    -- Clean up legacy objects if they exist
     if FlyBodyVelocity then FlyBodyVelocity:Destroy() FlyBodyVelocity = nil end
     if FlyBodyGyro then FlyBodyGyro:Destroy() FlyBodyGyro = nil end
+    
+    -- Reset velocity
+    local char = LocalPlayer.Character
+    if char then
+        local rootPart = char:FindFirstChild("HumanoidRootPart")
+        if rootPart and rootPart.Parent then
+            rootPart.AssemblyLinearVelocity = Vector3.new(0, 0, 0)
+        end
+    end
+    
+    -- Disconnect loop
     if FlyConnection then FlyConnection:Disconnect() FlyConnection = nil end
 end
 
@@ -3123,10 +3159,8 @@ ExitCheatBtn.MouseButton1Click:Connect(function()
     Config.Combat.Ragebot = false
     Config.Visuals.Enabled = false
     
-    -- Disable fly mode
-    if FlyBodyVelocity then FlyBodyVelocity:Destroy() FlyBodyVelocity = nil end
-    if FlyBodyGyro then FlyBodyGyro:Destroy() FlyBodyGyro = nil end
-    if FlyConnection then FlyConnection:Disconnect() FlyConnection = nil end
+    -- Disable fly mode (modern method - reset velocity)
+    DisableFly()
     
     -- Clean up all ESP objects
     for _, obj in pairs(ESPObjects) do
