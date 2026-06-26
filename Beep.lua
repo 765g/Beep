@@ -3,7 +3,7 @@
 -- Stable Version
 
 -- VERSION CONTROL (Update this for each new version)
-local BEEP_VERSION = "v5.2.0"
+local BEEP_VERSION = "v5.2.1"
 
 local StartTime = tick()
 if not game:IsLoaded() then
@@ -2801,13 +2801,36 @@ local function EnableFly()
     if FlyBodyVelocity then FlyBodyVelocity:Destroy() FlyBodyVelocity = nil end
     if FlyBodyGyro then FlyBodyGyro:Destroy() FlyBodyGyro = nil end
     
+    -- Try modern method first, fallback to legacy if needed
+    local useModernMethod = pcall(function()
+        local test = rootPart.AssemblyLinearVelocity
+    end)
+    
+    if not useModernMethod then
+        -- Fallback to legacy BodyVelocity method
+        FlyBodyVelocity = Instance.new("BodyVelocity")
+        FlyBodyVelocity.Velocity = Vector3.new(0, 0, 0)
+        FlyBodyVelocity.MaxForce = Vector3.new(9e9, 9e9, 9e9)
+        FlyBodyVelocity.Parent = rootPart
+        
+        FlyBodyGyro = Instance.new("BodyGyro")
+        FlyBodyGyro.MaxTorque = Vector3.new(9e9, 9e9, 9e9)
+        FlyBodyGyro.P = 9e4
+        FlyBodyGyro.Parent = rootPart
+    end
+    
     -- Modern flight system - direct velocity manipulation
     if FlyConnection then FlyConnection:Disconnect() end
     FlyConnection = RunService.RenderStepped:Connect(function()
         if not Config.Physics.Fly or not Config.Physics.FlyActive or not UI.Active then
             -- Reset velocity when disabled
-            if rootPart and rootPart.Parent then
-                rootPart.AssemblyLinearVelocity = Vector3.new(0, 0, 0)
+            if useModernMethod then
+                if rootPart and rootPart.Parent then
+                    pcall(function() rootPart.AssemblyLinearVelocity = Vector3.new(0, 0, 0) end)
+                end
+            else
+                if FlyBodyVelocity then FlyBodyVelocity:Destroy() FlyBodyVelocity = nil end
+                if FlyBodyGyro then FlyBodyGyro:Destroy() FlyBodyGyro = nil end
             end
             if FlyConnection then FlyConnection:Disconnect() FlyConnection = nil end
             return
@@ -2833,29 +2856,53 @@ local function EnableFly()
             direction = direction.Unit
         end
         
-        -- Write velocity directly to AssemblyLinearVelocity (modern method)
-        if rootPart and rootPart.Parent then
-            rootPart.AssemblyLinearVelocity = direction * Config.Physics.FlySpeed
+        -- Write velocity using appropriate method
+        if useModernMethod then
+            -- Modern method - direct AssemblyLinearVelocity
+            if rootPart and rootPart.Parent then
+                pcall(function()
+                    rootPart.AssemblyLinearVelocity = direction * Config.Physics.FlySpeed
+                end)
+            end
+        else
+            -- Legacy method - BodyVelocity
+            if FlyBodyVelocity and FlyBodyVelocity.Parent then
+                FlyBodyVelocity.Velocity = direction * Config.Physics.FlySpeed
+            end
+            if FlyBodyGyro and FlyBodyGyro.Parent then
+                FlyBodyGyro.CFrame = cam
+            end
         end
     end)
 end
 
 local function DisableFly()
     -- Clean up legacy objects if they exist
-    if FlyBodyVelocity then FlyBodyVelocity:Destroy() FlyBodyVelocity = nil end
-    if FlyBodyGyro then FlyBodyGyro:Destroy() FlyBodyGyro = nil end
+    if FlyBodyVelocity then 
+        pcall(function() FlyBodyVelocity:Destroy() end)
+        FlyBodyVelocity = nil 
+    end
+    if FlyBodyGyro then 
+        pcall(function() FlyBodyGyro:Destroy() end)
+        FlyBodyGyro = nil 
+    end
     
-    -- Reset velocity
+    -- Reset velocity (try both methods)
     local char = LocalPlayer.Character
     if char then
         local rootPart = char:FindFirstChild("HumanoidRootPart")
         if rootPart and rootPart.Parent then
-            rootPart.AssemblyLinearVelocity = Vector3.new(0, 0, 0)
+            pcall(function()
+                rootPart.AssemblyLinearVelocity = Vector3.new(0, 0, 0)
+            end)
         end
     end
     
     -- Disconnect loop
-    if FlyConnection then FlyConnection:Disconnect() FlyConnection = nil end
+    if FlyConnection then 
+        pcall(function() FlyConnection:Disconnect() end)
+        FlyConnection = nil 
+    end
 end
 
 UserInputService.InputBegan:Connect(function(input, gameProcessed)
